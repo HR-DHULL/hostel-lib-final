@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Hostel & Library Management v5</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+/* ── RESET & BASE ── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f0f4f8;color:#1a2332;min-height:100vh;display:flex}
+a{text-decoration:none;color:inherit}
+input,select,textarea,button{font-family:inherit;font-size:14px}
+button{cursor:pointer;border:none;outline:none}
+
+/* ── LAYOUT ── */
+#app{display:flex;width:100%;min-height:100vh}
+.sidebar{width:220px;min-height:100vh;background:#1a2332;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.content{padding:20px;flex:1}
+
+/* ── SIDEBAR ── */
+.sidebar-brand{padding:20px 16px 14px;border-bottom:1px solid #2d3f55}
+.brand-label{font-size:9px;letter-spacing:2px;color:#4a6080;font-weight:700;text-transform:uppercase}
+.brand-name{font-size:15px;font-weight:800;color:#fff;margin:3px 0 6px;line-height:1.2}
+.v-badge{background:#1565c0;color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;vertical-align:middle}
+.brand-status{font-size:11px;color:#4a6080;display:flex;align-items:center;gap:5px}
+.dot-green{width:7px;height:7px;border-radius:50%;background:#43a047;display:inline-block}
+.sidebar-section-label{font-size:9px;letter-spacing:2px;color:#4a6080;font-weight:700;padding:14px 16px 4px;text-transform:uppercase}
+.nav-item{padding:9px 16px;color:#8899aa;font-size:13px;font-weight:500;cursor:pointer;border-radius:6px;margin:1px 8px;display:flex;align-items:center;gap:8px;transition:all .15s}
+.nav-item:hover{background:#253045;color:#cdd8e3}
+.nav-item.active{background:#1565c0;color:#fff;font-weight:600}
+.nav-item.lib-active{background:#2e7d32;color:#fff;font-weight:600}
+.sidebar-footer{margin-top:auto;padding:14px 16px;border-top:1px solid #2d3f55}
+.sheet-link{font-size:11px;color:#4a6080;display:block;text-align:center;padding:6px;border-radius:5px;background:#253045;transition:color .15s}
+.sheet-link:hover{color:#cdd8e3}
+
+/* ── TOPBAR ── */
+.topbar{background:#fff;border-bottom:1px solid #e2e8f0;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-size:17px;font-weight:800;color:#1a2332}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.btn-icon{background:none;padding:6px 10px;font-size:15px;border-radius:7px;transition:background .15s;position:relative}
+.btn-icon:hover{background:#f1f5f9}
+.badge-red{background:#c62828;color:#fff;font-size:9px;padding:1px 4px;border-radius:8px;vertical-align:top;margin-left:2px}
+.btn-primary{background:#1565c0;color:#fff;padding:8px 16px;border-radius:8px;font-weight:600;font-size:13px;transition:background .15s}
+.btn-primary:hover{background:#1976d2}
+.btn-primary.lib{background:#2e7d32}.btn-primary.lib:hover{background:#388e3c}
+
+/* ── NOTIFICATIONS ── */
+.notif-wrap{position:relative}
+.notif-panel{position:absolute;right:0;top:calc(100% + 8px);width:320px;background:#fff;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);border:1px solid #e2e8f0;display:none;z-index:200}
+.notif-panel.open{display:block}
+.notif-hdr{padding:12px 14px;font-weight:700;font-size:13px;border-bottom:1px solid #f1f5f9}
+.notif-item{padding:9px 14px;font-size:12px;display:flex;align-items:flex-start;gap:7px;border-bottom:1px solid #f8fafc}
+
+/* ── CARDS ── */
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.card-title{font-size:14px;font-weight:700;color:#1a2332;margin-bottom:10px}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+@media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:#fff;border-radius:12px;padding:16px;border-left:4px solid #1565c0;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat-lbl{font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.stat-row2{display:flex;align-items:flex-end;justify-content:space-between}
+.stat-val{font-size:26px;font-weight:800;line-height:1}
+.stat-sub{font-size:11px;color:#94a3b8;margin-top:5px}
+
+/* ── GRID LAYOUTS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:768px){.g2{grid-template-columns:1fr}}
+
+/* ── STUDENT CARDS ── */
+.s-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.s-card{background:#fff;border-radius:11px;padding:14px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:box-shadow .15s,transform .1s;border:2px solid transparent}
+.s-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.12);transform:translateY(-1px);border-color:#1565c0}
+.s-card.lib:hover{border-color:#2e7d32}
+.s-card-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.s-card-name{font-size:14px;font-weight:700;color:#1a2332}
+.s-card-sub{font-size:11px;color:#64748b;margin-top:2px}
+.s-card-bot{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.s-card-meta{font-size:11px;color:#94a3b8}
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;flex-shrink:0}
+
+/* ── CHIPS ── */
+.chip{font-size:10px;font-weight:700;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;gap:3px}
+.chip-paid{background:#e8f5e9;color:#2e7d32}
+.chip-partial{background:#fff3e0;color:#e65100}
+.chip-pending{background:#fffde7;color:#f57f17}
+.chip-overdue{background:#fce4ec;color:#c62828}
+.chip-exited{background:#f1f5f9;color:#64748b}
+.lib-badge{background:#e8f5e9;color:#2e7d32;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;display:inline-block}
+.bal-badge{background:#fce4ec;color:#c62828;font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+
+/* ── BUTTONS ── */
+.btn-sm{padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .12s}
+.btn-blue{background:#e3f2fd;color:#1565c0}.btn-blue:hover{background:#bbdefb}
+.btn-green{background:#e8f5e9;color:#2e7d32}.btn-green:hover{background:#c8e6c9}
+.btn-red{background:#fce4ec;color:#c62828}.btn-red:hover{background:#f8bbd0}
+.btn-orange{background:#fff3e0;color:#e65100}.btn-orange:hover{background:#ffe0b2}
+.btn-yellow{background:#fffde7;color:#f57f17}.btn-yellow:hover{background:#fff9c4}
+.btn-gray{background:#f1f5f9;color:#475569}.btn-gray:hover{background:#e2e8f0}
+.btn-pay{background:#1565c0;color:#fff}.btn-pay:hover{background:#1976d2}
+.btn-pay.lib{background:#2e7d32}.btn-pay.lib:hover{background:#388e3c}
+.btn-outline{background:none;border:1px solid #e2e8f0;color:#475569;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600}
+.btn-outline:hover{background:#f1f5f9}
+.back-btn{background:none;color:#1565c0;font-size:13px;font-weight:600;padding:0 0 14px;display:inline-block;cursor:pointer;border:none}
+
+/* ── FORMS ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg.full{grid-column:1/-1}
+.flbl{font-size:12px;font-weight:600;color:#475569}
+.finp{padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:13px;transition:border .15s;width:100%}
+.finp:focus{border-color:#1565c0;outline:none}
+.hint{font-size:10px;color:#94a3b8;margin-top:2px}
+select.finp{background:#fff}
+
+/* ── SEARCH ── */
+.search-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.search-inp{padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;flex:1;min-width:200px}
+.search-inp:focus{border-color:#1565c0;outline:none}
+.filter-sel{padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:#fff}
+.filter-tag{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.ftag{padding:4px 12px;border-radius:16px;font-size:11px;font-weight:600;background:#f1f5f9;color:#475569;cursor:pointer;transition:all .12s}
+.ftag.active{background:#1565c0;color:#fff}
+.result-count{font-size:12px;color:#94a3b8;margin-bottom:8px}
+
+/* ── FEE COLS ── */
+.fee-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.fee-cols{grid-template-columns:1fr}}
+.fee-col{background:#fff;border-radius:10px;padding:12px;border-top:3px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.fee-col-title{font-size:12px;font-weight:700;margin-bottom:8px}
+.bulk-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f8fafc;flex-wrap:wrap}
+.bulk-row:last-child{border-bottom:none}
+
+/* ── PROFILE ── */
+.profile-top{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.profile-name{font-size:18px;font-weight:800;color:#1a2332}
+.profile-sub{font-size:13px;color:#64748b;margin-top:3px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.detail-grid{grid-template-columns:1fr}}
+.f-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f8fafc;font-size:13px}
+.f-lbl{color:#64748b;font-weight:500}
+.f-val{font-weight:600;color:#1a2332;text-align:right;max-width:60%}
+
+/* ── LEAVE ── */
+.leave-cur{display:flex;align-items:center;justify-content:space-between;background:#fffde7;border-radius:8px;padding:10px 12px;margin-bottom:8px;gap:10px;flex-wrap:wrap}
+
+/* ── FEE HISTORY ── */
+.fh-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f8fafc;flex-wrap:wrap}
+.fh-row:last-child{border-bottom:none}
+
+/* ── PROGRESS ── */
+.prog-track{height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .3s}
+
+/* ── MODALS ── */
+.overlay{position:fixed;inset:0;background:rgba(15,20,30,.55);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.2)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.modal-title{font-size:16px;font-weight:800;color:#1a2332}
+.modal-sub{font-size:12px;color:#64748b;margin-top:2px}
+.modal-close{font-size:20px;color:#94a3b8;cursor:pointer;line-height:1;background:none;border:none;padding:2px 6px}
+.modal-close:hover{color:#1a2332}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+
+/* ── BROADCAST ── */
+.bc-area{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;resize:vertical;font-size:13px;min-height:100px}
+.bc-area:focus{border-color:#1565c0;outline:none}
+
+/* ── SETTINGS ── */
+.settings-card{background:#fff;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.settings-title{font-size:14px;font-weight:700;margin-bottom:10px;color:#1a2332}
+.settings-desc{font-size:12px;color:#64748b;margin-bottom:10px}
+
+/* ── IMPORT ── */
+.import-step{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.import-hdr{font-size:15px;font-weight:700;margin-bottom:6px}
+.map-sel{padding:5px 8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px}
+.import-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+.import-table th,.import-table td{padding:7px 10px;border-bottom:1px solid #f1f5f9;text-align:left}
+.import-table th{background:#f8fafc;font-weight:700;color:#475569}
+
+/* ── RECIPIENT ROW ── */
+.recipient-row{display:grid;grid-template-columns:1fr 1fr 80px;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid #f8fafc}
+
+/* ── LOADING ── */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:12px}
+.spinner{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#1565c0;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:#94a3b8;font-weight:500}
+.empty{color:#94a3b8;font-size:13px;text-align:center;padding:20px 0}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:#1a2332;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .25s;z-index:9999;max-width:320px}
+.toast.show{opacity:1}
+.toast.ok{background:#2e7d32}
+.toast.err{background:#c62828}
+.toast.lib{background:#2e7d32}
+
+/* ── MISC ── */
+.wa-link-btn{display:block;background:#25d366;color:#fff;text-align:center;padding:10px;border-radius:8px;font-weight:700;font-size:14px;margin-top:10px}
+#id-card-frame{width:100%;min-height:300px;border:none;border-radius:8px}
+  </style>
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-label">COACHING INSTITUTE</div>
+      <div class="brand-name">Management System <span class="v-badge">v5</span></div>
+      <div class="brand-status"><span class="dot-green"></span> Supabase Live</div>
+    </div>
+    <div class="sidebar-section-label">HOSTEL</div>
+    <nav>
+      <div class="nav-item active" id="nav-dashboard"   onclick="go('dashboard')">  <span>⊞</span>  Dashboard     </div>
+      <div class="nav-item"       id="nav-students"     onclick="go('students')">   <span>👤</span>  Students      </div>
+      <div class="nav-item"       id="nav-fees"         onclick="go('fees')">       <span>₹</span>   Monthly Fees  </div>
+      <div class="nav-item"       id="nav-leave"        onclick="go('leave')">      <span>📋</span>  Leave Tracker </div>
+    </nav>
+    <div class="sidebar-section-label" style="margin-top:8px">LIBRARY</div>
+    <nav>
+      <div class="nav-item" id="nav-library"      onclick="go('library')">      <span>📚</span> Members      </div>
+      <div class="nav-item" id="nav-library-fees" onclick="go('library-fees')"> <span>₹</span>  Monthly Fees  </div>
+    </nav>
+    <div class="sidebar-section-label" style="margin-top:8px">TOOLS</div>
+    <nav>
+      <div class="nav-item" id="nav-broadcast" onclick="go('broadcast')"><span>📣</span> Broadcast     </div>
+      <div class="nav-item" id="nav-import"    onclick="go('import')">   <span>📥</span> Import Data    </div>
+      <div class="nav-item" id="nav-settings"  onclick="go('settings')">&nbsp;<span>⚙️</span> Settings  </div>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="https://supabase.com" target="_blank" class="sheet-link">📊 Open Supabase Dashboard</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-right">
+        <div class="notif-wrap">
+          <button class="btn-icon" onclick="toggleNotif()">🔔 <span class="badge-red" id="notif-count">0</span></button>
+          <div class="notif-panel" id="notif-panel">
+            <div class="notif-hdr">Alerts <span id="notif-total" style="color:#94a3b8;font-weight:400;font-size:11px"></span></div>
+            <div id="notif-list" style="max-height:300px;overflow-y:auto"></div>
+          </div>
+        </div>
+        <button class="btn-primary" id="topbar-add-btn" onclick="handleTopbarAdd()">+ Add Student</button>
+      </div>
+    </div>
+    <div class="content" id="content">
+      <div class="loading-wrap"><div class="spinner"></div><div class="loading-text">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODALS ══════════════════════════════════════════════════ -->
+<!-- Add Student -->
+<div class="overlay" id="m-add-student">
+  <div class="modal">
+    <div class="modal-hdr"><div><div class="modal-title">👤 Add Hostel Student</div></div><button class="modal-close" onclick="closeM('m-add-student')">✕</button></div>
+    <div class="form-grid">
+      <div class="fg full"><label class="flbl">Full Name *</label><input class="finp" id="as-name" placeholder="Student name"/></div>
+      <div class="fg"><label class="flbl">Room Number</label><input class="finp" id="as-room" placeholder="e.g. A-101"/></div>
+      <div class="fg"><label class="flbl">Course</label><input class="finp" id="as-course" placeholder="e.g. B.Tech"/></div>
+      <div class="fg"><label class="flbl">Phone</label><input class="finp" id="as-phone" placeholder="10-digit number"/></div>
+      <div class="fg"><label class="flbl">Email</label><input class="finp" id="as-email" type="email" placeholder="email@example.com"/></div>
+      <div class="fg"><label class="flbl">Date of Birth</label><input class="finp" id="as-dob" type="date"/></div>
+      <div class="fg"><label class="flbl">Joining Date *</label><input class="finp" id="as-join" type="date"/></div>
+      <div class="fg"><label class="flbl">Monthly Fee (₹) *</label><input class="finp" id="as-fee" type="number" placeholder="e.g. 5000"/></div>
+      <div class="fg"><label class="flbl">Fee Day (1–28)</label><input class="finp" id="as-feeday" type="number" min="1" max="28" placeholder="1"/></div>
+      <div class="fg"><label class="flbl">Override Due Date</label><input class="finp" id="as-override-due" type="number" min="1" max="28" placeholder="Optional"/></div>
+      <div class="fg"><label class="flbl">Discount (₹)</label><input class="finp" id="as-discount" type="number" placeholder="0"/></div>
+      <div class="fg full"><label class="flbl">Notes</label><input class="finp" id="as-notes" placeholder="Any notes…"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-add-student')">Cancel</button>
+      <button class="btn-primary" id="btn-add-s" onclick="submitAddStudent()">Add Student</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Student -->
+<div class="overlay" id="m-edit-student">
+  <div class="modal">
+    <div class="modal-hdr"><div><div class="modal-title">✏️ Edit Student</div><div class="modal-sub" id="edit-s-sub"></div></div><button class="modal-close" onclick="closeM('m-edit-student')">✕</button></div>
+    <input type="hidden" id="edit-s-id"/>
+    <div class="form-grid">
+      <div class="fg full"><label class="flbl">Full Name *</label><input class="finp" id="es-name"/></div>
+      <div class="fg"><label class="flbl">Room</label><input class="finp" id="es-room"/></div>
+      <div class="fg"><label class="flbl">Course</label><input class="finp" id="es-course"/></div>
+      <div class="fg"><label class="flbl">Phone</label><input class="finp" id="es-phone"/></div>
+      <div class="fg"><label class="flbl">Email</label><input class="finp" id="es-email"/></div>
+      <div class="fg"><label class="flbl">DOB</label><input class="finp" id="es-dob" type="date"/></div>
+      <div class="fg"><label class="flbl">Joining Date</label><input class="finp" id="es-join" type="date"/></div>
+      <div class="fg"><label class="flbl">Exit Date</label><input class="finp" id="es-exit" type="date"/></div>
+      <div class="fg"><label class="flbl">Monthly Fee (₹)</label><input class="finp" id="es-fee" type="number"/></div>
+      <div class="fg"><label class="flbl">Fee Day</label><input class="finp" id="es-feeday" type="number" min="1" max="28"/></div>
+      <div class="fg"><label class="flbl">Override Due Date</label><input class="finp" id="es-override-due" type="number"/></div>
+      <div class="fg"><label class="flbl">Discount (₹)</label><input class="finp" id="es-discount" type="number"/></div>
+      <div class="fg full"><label class="flbl">Notes</label><input class="finp" id="es-notes"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-edit-student')">Cancel</button>
+      <button class="btn-primary" id="btn-edit-s" onclick="submitEditStudent()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Library Member -->
+<div class="overlay" id="m-add-lib">
+  <div class="modal">
+    <div class="modal-hdr"><div><div class="modal-title">📚 Add Library Member</div></div><button class="modal-close" onclick="closeM('m-add-lib')">✕</button></div>
+    <div class="form-grid">
+      <div class="fg full"><label class="flbl">Full Name *</label><input class="finp" id="al-name" placeholder="Member name"/></div>
+      <div class="fg"><label class="flbl">Seat Number</label><input class="finp" id="al-seat" placeholder="e.g. S-12"/></div>
+      <div class="fg"><label class="flbl">Course</label><input class="finp" id="al-course"/></div>
+      <div class="fg"><label class="flbl">Phone</label><input class="finp" id="al-phone"/></div>
+      <div class="fg"><label class="flbl">Email</label><input class="finp" id="al-email" type="email"/></div>
+      <div class="fg"><label class="flbl">Date of Birth</label><input class="finp" id="al-dob" type="date"/></div>
+      <div class="fg"><label class="flbl">Joining Date *</label><input class="finp" id="al-join" type="date"/></div>
+      <div class="fg"><label class="flbl">Monthly Fee (₹) *</label><input class="finp" id="al-fee" type="number"/></div>
+      <div class="fg"><label class="flbl">Fee Day</label><input class="finp" id="al-feeday" type="number" min="1" max="28"/></div>
+      <div class="fg"><label class="flbl">Override Due Date</label><input class="finp" id="al-override-due" type="number"/></div>
+      <div class="fg"><label class="flbl">Discount (₹)</label><input class="finp" id="al-discount" type="number"/></div>
+      <div class="fg full"><label class="flbl">Notes</label><input class="finp" id="al-notes"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-add-lib')">Cancel</button>
+      <button class="btn-primary lib" id="btn-add-lib" onclick="submitAddLibMember()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Library Member -->
+<div class="overlay" id="m-edit-lib">
+  <div class="modal">
+    <div class="modal-hdr"><div><div class="modal-title">✏️ Edit Library Member</div><div class="modal-sub" id="edit-l-sub"></div></div><button class="modal-close" onclick="closeM('m-edit-lib')">✕</button></div>
+    <input type="hidden" id="edit-l-id"/>
+    <div class="form-grid">
+      <div class="fg full"><label class="flbl">Full Name *</label><input class="finp" id="el-name"/></div>
+      <div class="fg"><label class="flbl">Seat</label><input class="finp" id="el-seat"/></div>
+      <div class="fg"><label class="flbl">Course</label><input class="finp" id="el-course"/></div>
+      <div class="fg"><label class="flbl">Phone</label><input class="finp" id="el-phone"/></div>
+      <div class="fg"><label class="flbl">Email</label><input class="finp" id="el-email"/></div>
+      <div class="fg"><label class="flbl">DOB</label><input class="finp" id="el-dob" type="date"/></div>
+      <div class="fg"><label class="flbl">Joining Date</label><input class="finp" id="el-join" type="date"/></div>
+      <div class="fg"><label class="flbl">Exit Date</label><input class="finp" id="el-exit" type="date"/></div>
+      <div class="fg"><label class="flbl">Monthly Fee (₹)</label><input class="finp" id="el-fee" type="number"/></div>
+      <div class="fg"><label class="flbl">Fee Day</label><input class="finp" id="el-feeday" type="number"/></div>
+      <div class="fg"><label class="flbl">Override Due Date</label><input class="finp" id="el-override-due" type="number"/></div>
+      <div class="fg"><label class="flbl">Discount (₹)</label><input class="finp" id="el-discount" type="number"/></div>
+      <div class="fg full"><label class="flbl">Notes</label><input class="finp" id="el-notes"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-edit-lib')">Cancel</button>
+      <button class="btn-primary lib" id="btn-edit-lib" onclick="submitEditLibMember()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pay Modal -->
+<div class="overlay" id="m-pay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr"><div><div class="modal-title" id="pay-title">💳 Record Payment</div><div class="modal-sub" id="pay-sub"></div></div><button class="modal-close" onclick="closeM('m-pay')">✕</button></div>
+    <input type="hidden" id="pay-fee-id"/><input type="hidden" id="pay-module"/><input type="hidden" id="pay-student-id"/>
+    <div id="pay-summary" style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+    <div class="form-grid">
+      <div class="fg full"><label class="flbl">Amount (₹) *</label><input class="finp" id="pay-amount" type="number" placeholder="Enter amount"/></div>
+      <div class="fg"><label class="flbl">Mode</label>
+        <select class="finp" id="pay-mode"><option value="">Select mode</option><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option><option>Advance</option></select>
+      </div>
+      <div class="fg"><label class="flbl">Note</label><input class="finp" id="pay-note" placeholder="Optional note"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-pay')">Cancel</button>
+      <button class="btn-primary" id="btn-pay" onclick="submitPayment()">Record Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Leave Modal -->
+<div class="overlay" id="m-leave">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hdr"><div><div class="modal-title">📋 Grant Leave</div><div class="modal-sub" id="leave-sub"></div></div><button class="modal-close" onclick="closeM('m-leave')">✕</button></div>
+    <input type="hidden" id="leave-student-id"/><input type="hidden" id="leave-student-name"/>
+    <div class="form-grid">
+      <div class="fg"><label class="flbl">From Date *</label><input class="finp" id="leave-from" type="date"/></div>
+      <div class="fg"><label class="flbl">To Date *</label><input class="finp" id="leave-to" type="date"/></div>
+      <div class="fg full"><label class="flbl">Reason</label><textarea class="bc-area" id="leave-reason" style="height:60px" placeholder="Reason for leave…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-leave')">Cancel</button>
+      <button class="btn-primary" onclick="submitLeave()">Grant Leave</button>
+    </div>
+  </div>
+</div>
+
+<!-- WhatsApp Modal -->
+<div class="overlay" id="m-wa">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hdr"><div class="modal-title">📱 WhatsApp Reminder</div><button class="modal-close" onclick="closeM('m-wa')">✕</button></div>
+    <div style="font-size:13px">
+      <div class="f-row"><span class="f-lbl">Name</span><span id="wa-name" class="f-val"></span></div>
+      <div class="f-row"><span class="f-lbl">Phone</span><span id="wa-phone" class="f-val"></span></div>
+      <div style="background:#f8fafc;border-radius:8px;padding:10px;margin:12px 0;font-size:12px;color:#475569;white-space:pre-wrap" id="wa-msg"></div>
+      <a id="wa-link" href="#" target="_blank" class="wa-link-btn">📱 Open WhatsApp</a>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="overlay" id="m-delete">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-hdr"><div class="modal-title">🗑️ Confirm Delete</div><button class="modal-close" onclick="closeM('m-delete')">✕</button></div>
+    <input type="hidden" id="del-id"/><input type="hidden" id="del-module"/>
+    <p id="del-sub" style="font-size:14px;color:#475569;margin-bottom:6px"></p>
+    <p style="font-size:12px;color:#94a3b8">A backup copy will be saved in Deleted Records.</p>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-delete')">Cancel</button>
+      <button class="btn-sm btn-red" onclick="confirmDelete()">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Advance Modal -->
+<div class="overlay" id="m-advance">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hdr"><div><div class="modal-title">📅 Pay Advance Months</div><div class="modal-sub" id="adv-sub"></div></div><button class="modal-close" onclick="closeM('m-advance')">✕</button></div>
+    <input type="hidden" id="adv-student-id"/><input type="hidden" id="adv-module"/>
+    <div class="fg" style="margin-bottom:12px"><label class="flbl">Number of months to pay in advance</label><input class="finp" id="adv-months" type="number" min="1" max="12" value="1"/></div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-advance')">Cancel</button>
+      <button class="btn-primary" onclick="submitAdvance()">Pay Advance</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reminder Confirm -->
+<div class="overlay" id="m-confirm-reminder">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-hdr"><div class="modal-title">📧 Send Fee Reminders</div><button class="modal-close" onclick="closeM('m-confirm-reminder')">✕</button></div>
+    <input type="hidden" id="remind-module"/>
+    <p style="font-size:13px;margin-bottom:8px">Will send email reminders to <strong id="remind-count">…</strong> students with pending/overdue fees.</p>
+    <div id="remind-recipients" style="max-height:180px;overflow-y:auto;margin:10px 0;font-size:12px"></div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-confirm-reminder')">Cancel</button>
+      <button class="btn-primary" id="btn-send-remind" onclick="confirmSendReminders()">📧 Send to All</button>
+    </div>
+  </div>
+</div>
+
+<!-- ID Card Modal -->
+<div class="overlay" id="m-idcard">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hdr"><div class="modal-title">🪪 ID Card</div><button class="modal-close" onclick="closeM('m-idcard')">✕</button></div>
+    <div id="id-card-frame"></div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-idcard')">Close</button>
+      <button class="btn-primary" onclick="printIdCard()">🖨️ Print</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  CONFIGURATION — REPLACE WITH YOUR SUPABASE CREDENTIALS
+// ══════════════════════════════════════════════════════════════
+var SUPABASE_URL = "https://jtthmxjozbylluscfybt.supabase.co";       // e.g. https://abcxyz.supabase.co
+var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0dGhteGpvemJ5bGx1c2NmeWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDA3MTcsImV4cCI6MjA4ODg3NjcxN30.Zoc_wKtsBbQ1u3T-8o8Z08I5F4KylME8QLAdf0gNzJ8";  // from Project Settings → API
+
+var sb; // supabase client
+
+// ══════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════
+var S = {
+  tab:"dashboard", selected:null,
+  students:[], leaves:[], libMembers:[],
+  monthSummary:{hostel:[],library:[]},
+  curMonth:new Date().getMonth()+1,
+  curYear:new Date().getFullYear(),
+  settings:{},
+  searchQ:""
+};
+
+var MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+var TAB_LABELS={dashboard:"Dashboard",students:"Students",fees:"Hostel Monthly Fees",leave:"Leave Tracker",library:"Library Members","library-fees":"Library Monthly Fees",broadcast:"Broadcast Notice",import:"Import Data",settings:"Settings"};
+var TOPBAR_LABEL={dashboard:null,students:"+ Add Student",fees:null,leave:null,library:"+ Add Member","library-fees":null,broadcast:null,import:null,settings:null};
+
+// ── HELPERS ───────────────────────────────────────────────────
+function uid(p){return (p||"X")+Date.now()+Math.floor(Math.random()*9999);}
+function today(){return new Date().toISOString().slice(0,10);}
+function pad2(n){return String(n).padStart(2,"0");}
+function computeDueDate(item,month,year){
+  var day=item.override_due_date||item.fee_day||1;
+  if(!day&&item.joining_date){var d=new Date(item.joining_date);if(!isNaN(d))day=d.getDate();}
+  day=Math.min(Math.max(parseInt(day)||1,1),28);
+  return year+"-"+pad2(month)+"-"+pad2(day);
+}
+function nextMY(m,y){return m===12?{m:1,y:y+1}:{m:m+1,y:y};}
+
+function v(id){var el=document.getElementById(id);return el?el.value.trim():"";}
+function setV(id,val){var el=document.getElementById(id);if(el)el.value=val||"";}
+function setContent(html){document.getElementById("content").innerHTML=html;}
+function openM(id){var el=document.getElementById(id);if(el){el.classList.add("open");el.style.display="flex";}}
+function closeM(id){var el=document.getElementById(id);if(el){el.classList.remove("open");el.style.display="none";}}
+
+var _toastTimer;
+function toast(msg,type){
+  var el=document.getElementById("toast");
+  el.textContent=msg;el.className="toast show"+(type?" "+type:"");
+  clearTimeout(_toastTimer);_toastTimer=setTimeout(function(){el.className="toast";},3200);
+}
+
+function fmt(val){if(!val||val==="null")return"—";return String(val);}
+function fmtM(val){return"₹"+Number(val||0).toLocaleString("en-IN");}
+function fmtDate(d){if(!d)return"—";var dt=new Date(d+"T00:00:00");return isNaN(dt)?"—":dt.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});}
+function daysAgo(d){if(!d)return null;return Math.ceil((new Date(d)-new Date())/86400000);}
+
+function chip(status){
+  var map={paid:"chip-paid ✓ Paid",partial:"chip-partial ⚡ Partial",pending:"chip-pending ⏳ Pending",overdue:"chip-overdue 🔴 Overdue"};
+  var val=map[status]||"chip-pending "+status;
+  var parts=val.split(" ");var cls=parts[0];var label=parts.slice(1).join(" ");
+  return'<span class="chip '+cls+'">'+label+'</span>';
+}
+function av(name,size,bg){
+  var initials=(name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
+  var colors=["#1565c0","#2e7d32","#6a1b9a","#e65100","#00695c","#c62828","#0277bd","#4527a0"];
+  var col=bg||colors[(name||"").charCodeAt(0)%colors.length];
+  var s=size||32;
+  return'<div class="av" style="width:'+s+'px;height:'+s+'px;background:'+col+';font-size:'+(s/2.4|0)+'px">'+initials+'</div>';
+}
+function sc(label,val,sub,icon,color){
+  return'<div class="stat-card" style="border-left-color:'+color+'">'
+    +'<div class="stat-lbl">'+label+'</div>'
+    +'<div class="stat-row2"><div class="stat-val" style="color:'+color+'">'+val+'</div><span style="font-size:20px">'+icon+'</span></div>'
+    +'<div class="stat-sub">'+sub+'</div></div>';
+}
+function frow(label,val){return'<div class="f-row"><span class="f-lbl">'+label+'</span><span class="f-val">'+val+'</span></div>';}
+function dueDayLabel(item){
+  if(item.override_due_date)return"Day "+item.override_due_date+" (override)";
+  if(item.fee_day)return"Day "+item.fee_day;
+  if(item.joining_date){var d=new Date(item.joining_date);if(!isNaN(d))return"Day "+d.getDate()+" (joining day)";}
+  return"—";
+}
+
+// ── NAV ───────────────────────────────────────────────────────
+function go(tab){
+  S.tab=tab;S.selected=null;
+  document.querySelectorAll(".nav-item").forEach(function(el){el.classList.remove("active","lib-active");});
+  var navEl=document.getElementById("nav-"+tab);
+  if(navEl){var isLib=(tab==="library"||tab==="library-fees");navEl.classList.add(isLib?"lib-active":"active");}
+  document.getElementById("topbar-title").textContent=TAB_LABELS[tab]||tab;
+  var addBtn=document.getElementById("topbar-add-btn");
+  if(TOPBAR_LABEL[tab]){addBtn.style.display="block";addBtn.textContent=TOPBAR_LABEL[tab];}
+  else addBtn.style.display="none";
+  renderTab();
+}
+function handleTopbarAdd(){if(S.tab==="students")openM("m-add-student");else if(S.tab==="library")openM("m-add-lib");}
+function renderTab(){
+  switch(S.tab){
+    case"dashboard":renderDashboard();break;
+    case"students":S.selected?renderStudentDetail(S.selected):renderStudents();break;
+    case"fees":renderMonthlyFees("hostel");break;
+    case"leave":renderLeave();break;
+    case"library":S.selected?renderLibDetail(S.selected):renderLibrary();break;
+    case"library-fees":renderMonthlyFees("library");break;
+    case"broadcast":renderBroadcast();break;
+    case"import":renderImport();break;
+    case"settings":renderSettings();break;
+  }
+}
+function toggleNotif(){document.getElementById("notif-panel").classList.toggle("open");}
+
+// ══════════════════════════════════════════════════════════════
+//  DATA LOADING
+// ══════════════════════════════════════════════════════════════
+async function loadData(){
+  setContent('<div class="loading-wrap"><div class="spinner"></div><div class="loading-text">Loading from Supabase…</div></div>');
+  try {
+    var m=S.curMonth, y=S.curYear;
+    var [stuRes,levRes,libRes,hFeeRes,lFeeRes,setRes] = await Promise.all([
+      sb.from("hostel_students").select("*").order("name"),
+      sb.from("leaves").select("*").order("from_date",{ascending:false}),
+      sb.from("library_members").select("*").order("name"),
+      sb.from("monthly_fees").select("*").eq("month",m).eq("year",y),
+      sb.from("library_fees").select("*").eq("month",m).eq("year",y),
+      sb.from("app_settings").select("*").eq("id",1).single()
+    ]);
+
+    S.students   = stuRes.data||[];
+    S.leaves     = levRes.data||[];
+    S.libMembers = libRes.data||[];
+    S.settings   = setRes.data||{};
+
+    var hFeeMap={}, lFeeMap={};
+    (hFeeRes.data||[]).forEach(function(f){hFeeMap[f.student_id]=f;});
+    (lFeeRes.data||[]).forEach(function(f){lFeeMap[f.member_id]=f;});
+
+    S.monthSummary.hostel = S.students.filter(function(s){return !s.exit_date;}).map(function(s){
+      var fee=hFeeMap[s.id]||null;
+      var total=Number(s.monthly_fee_amount||0),disc=Number(s.discount||0),net=Math.max(0,total-disc);
+      return fee
+        ?{id:fee.id,studentId:s.id,name:s.name,room:s.room,total:Number(fee.total_amount),discount:Number(fee.discount),net:Number(fee.net_amount),paid:Number(fee.paid_amount),balance:Number(fee.balance),status:fee.status,mode:fee.mode,dueDate:fee.due_date}
+        :{id:null,studentId:s.id,name:s.name,room:s.room,total:total,discount:disc,net:net,paid:0,balance:net,status:"pending",mode:"",dueDate:computeDueDate(s,m,y)};
+    });
+
+    S.monthSummary.library = S.libMembers.filter(function(m){return !m.exit_date;}).map(function(mb){
+      var fee=lFeeMap[mb.id]||null;
+      var total=Number(mb.monthly_fee_amount||0),disc=Number(mb.discount||0),net=Math.max(0,total-disc);
+      return fee
+        ?{id:fee.id,memberId:mb.id,studentId:mb.id,name:mb.name,seat:mb.seat_number,total:Number(fee.total_amount),discount:Number(fee.discount),net:Number(fee.net_amount),paid:Number(fee.paid_amount),balance:Number(fee.balance),status:fee.status,mode:fee.mode,dueDate:fee.due_date}
+        :{id:null,memberId:mb.id,studentId:mb.id,name:mb.name,seat:mb.seat_number,total:total,discount:disc,net:net,paid:0,balance:net,status:"pending",mode:"",dueDate:computeDueDate(mb,m,y)};
+    });
+
+    buildNotifs();
+    renderTab();
+  } catch(e){
+    setContent('<div class="loading-wrap"><div style="font-size:36px">⚠️</div><div style="font-weight:700;margin-top:8px">'+e.message+'</div><button class="btn-primary" style="margin-top:14px" onclick="loadData()">Retry</button></div>');
+  }
+}
+
+function buildNotifs(){
+  var items=[];
+  var all=S.monthSummary.hostel.concat(S.monthSummary.library.map(function(x){return Object.assign({},x,{_lib:true});}));
+  all.forEach(function(x){
+    if(x.status==="overdue")items.push({icon:"🔴",msg:(x._lib?"[Lib] ":"")+x.name+" — overdue ₹"+Number(x.balance||0).toLocaleString("en-IN"),color:"#c62828"});
+    else if(x.status==="partial")items.push({icon:"⚡",msg:(x._lib?"[Lib] ":"")+x.name+" — partial ₹"+Number(x.balance||0).toLocaleString("en-IN")+" remaining",color:"#e65100"});
+    else if(x.status==="pending"&&x.dueDate){var days=daysAgo(x.dueDate);if(days!==null&&days<=3)items.push({icon:"⏰",msg:(x._lib?"[Lib] ":"")+x.name+" — due "+fmtDate(x.dueDate),color:"#f57f17"});}
+  });
+  document.getElementById("notif-count").textContent=items.length;
+  document.getElementById("notif-total").textContent=items.length+" alert"+(items.length!==1?"s":"");
+  var list=document.getElementById("notif-list");
+  if(!items.length){list.innerHTML='<div class="empty" style="padding:14px">No alerts 🎉</div>';return;}
+  list.innerHTML=items.map(function(it){return'<div class="notif-item"><span>'+it.icon+'</span><span style="color:'+it.color+'">'+it.msg+'</span></div>';}).join("");
+}
+
+// ══════════════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════════════
+function renderDashboard(){
+  var actH=S.students.filter(function(s){return !s.exit_date;});
+  var actL=S.libMembers.filter(function(m){return !m.exit_date;});
+  var hPaid=S.monthSummary.hostel.filter(function(x){return x.status==="paid";});
+  var lPaid=S.monthSummary.library.filter(function(x){return x.status==="paid";});
+  var hPart=S.monthSummary.hostel.filter(function(x){return x.status==="partial";});
+  var hPend=S.monthSummary.hostel.filter(function(x){return x.status==="pending"||x.status==="overdue";});
+  var lPend=S.monthSummary.library.filter(function(x){return x.status==="pending"||x.status==="overdue";});
+  var hCol=S.monthSummary.hostel.reduce(function(a,x){return a+Number(x.paid||0);},0);
+  var lCol=S.monthSummary.library.reduce(function(a,x){return a+Number(x.paid||0);},0);
+  var hBal=S.monthSummary.hostel.reduce(function(a,x){return a+Number(x.balance||0);},0);
+  var lBal=S.monthSummary.library.reduce(function(a,x){return a+Number(x.balance||0);},0);
+  var curLeaves=S.leaves.filter(function(l){return l.is_current===true||l.is_current==="true";});
+  var mn=MONTHS[S.curMonth-1]+" "+S.curYear;
+
+  var pendRows=hPend.concat(lPend.map(function(x){return Object.assign({},x,{_lib:true});})).slice(0,6).map(function(x){
+    return'<div class="bulk-row" style="cursor:pointer" onclick="go(\''+(x._lib?"library-fees":"fees")+'\')">'
+      +'<div style="flex:1;font-weight:600;font-size:12px">'+(x._lib?'<span class="lib-badge">Lib</span> ':"")+x.name+'</div>'
+      +'<div style="font-size:11px;color:#64748b">Due '+fmtDate(x.dueDate)+'</div>'
+      +'<div style="margin-left:8px">'+chip(x.status)+'</div>'
+      +'<div style="font-weight:700;font-size:12px;margin-left:8px;color:#c62828">'+fmtM(x.balance)+'</div>'
+      +'</div>';
+  }).join("");
+
+  setContent(
+    '<div class="stats-grid">'
+    +sc("Active Students",actH.length,actH.length+" hostel occupants","🏠","#1565c0")
+    +sc("Library Members",actL.length,actL.length+" active seats","📚","#2e7d32")
+    +sc("Collected — "+mn,fmtM(hCol+lCol),"Hostel "+fmtM(hCol)+" · Lib "+fmtM(lCol),"💰","#43a047")
+    +sc("Pending Balance",fmtM(hBal+lBal),hPend.length+" unpaid · "+hPart.length+" partial","⚠️","#c62828")
+    +'</div>'
+    +'<div class="g2">'
+    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">🏠 Hostel — '+mn+'</div><button class="btn-sm btn-blue" onclick="go(\'fees\')">View All</button></div>'+buildMiniFeeSummary(S.monthSummary.hostel)+'</div>'
+    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">📚 Library — '+mn+'</div><button class="btn-sm btn-green" onclick="go(\'library-fees\')">View All</button></div>'+buildMiniFeeSummary(S.monthSummary.library)+'</div>'
+    +'</div>'
+    +'<div class="g2">'
+    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">⚠️ Pending / Partial</div><span style="font-size:11px;color:#94a3b8">'+(hPend.length+lPend.length)+" students"+'</span></div>'+(pendRows||'<div class="empty">All fees collected! 🎉</div>')+'</div>'
+    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">📋 On Leave Now</div><button class="btn-sm btn-yellow" onclick="go(\'leave\')">View</button></div>'
+    +(curLeaves.length?curLeaves.slice(0,5).map(function(l){return'<div class="leave-cur"><div><div style="font-weight:700;font-size:13px">'+l.student_name+'</div><div style="font-size:11px;color:#64748b">'+fmtDate(l.from_date)+' → '+fmtDate(l.to_date)+'</div></div><span class="chip chip-pending">On Leave</span></div>';}).join(""):'<div class="empty">No active leaves</div>')
+    +'</div></div>'
+  );
+}
+
+function buildMiniFeeSummary(list){
+  var paid=list.filter(function(x){return x.status==="paid";}).length;
+  var partial=list.filter(function(x){return x.status==="partial";}).length;
+  var pending=list.filter(function(x){return x.status==="pending";}).length;
+  var overdue=list.filter(function(x){return x.status==="overdue";}).length;
+  var total=list.length||1;
+  var paidPct=Math.round(paid/total*100);
+  return'<div style="display:flex;gap:10px;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:#2e7d32">'+paid+'</div><div style="font-size:10px;color:#64748b">Paid</div></div>'
+    +'<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:#e65100">'+partial+'</div><div style="font-size:10px;color:#64748b">Partial</div></div>'
+    +'<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:#f57f17">'+pending+'</div><div style="font-size:10px;color:#64748b">Pending</div></div>'
+    +'<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:#c62828">'+overdue+'</div><div style="font-size:10px;color:#64748b">Overdue</div></div>'
+    +'</div>'
+    +'<div class="prog-track" style="margin-bottom:4px"><div class="prog-fill" style="width:'+paidPct+'%;background:#43a047"></div></div>'
+    +'<div style="font-size:10px;color:#94a3b8">'+paidPct+'% collected</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+//  STUDENTS
+// ══════════════════════════════════════════════════════════════
+function renderStudents(){
+  var active=S.students.filter(function(s){return !s.exit_date;});
+  var courses={};
+  S.students.forEach(function(s){if(s.course&&!s.exit_date)courses[s.course]=(courses[s.course]||0)+1;});
+  var tags=Object.entries(courses).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+
+  var html='<div class="search-bar">'
+    +'<input class="search-inp" id="s-search" placeholder="🔍 Search by name, room, phone, course…" oninput="filterStudents()"/>'
+    +'<select class="filter-sel" id="s-status-filter" onchange="filterStudents()"><option value="all">All Status</option><option value="paid">Paid</option><option value="partial">Partial</option><option value="pending">Pending</option><option value="overdue">Overdue</option></select>'
+    +'<select class="filter-sel" id="s-exit-filter" onchange="filterStudents()"><option value="active">Active</option><option value="exited">Exited</option><option value="all">All</option></select>'
+    +'</div>';
+  html+='<div class="filter-tag">'
+    +'<span class="ftag active" id="ftag-all" onclick="setCourseFilter(\'all\')">All ('+active.length+')</span>'
+    +tags.map(function(p){return'<span class="ftag" id="ftag-'+p[0]+'" onclick="setCourseFilter(\''+p[0]+'\')">'+p[0]+' ('+p[1]+')</span>';}).join("")
+    +'</div>';
+  html+='<div id="s-result-count" class="result-count"></div><div id="s-grid" class="s-grid"></div>';
+  setContent(html);
+  filterStudents();
+}
+
+var _curCourseFilter="all";
+function setCourseFilter(course){
+  _curCourseFilter=course;
+  document.querySelectorAll(".filter-tag .ftag").forEach(function(el){el.classList.remove("active");});
+  var el=document.getElementById("ftag-"+(course==="all"?"all":course));
+  if(el)el.classList.add("active");
+  filterStudents();
+}
+
+function filterStudents(){
+  var q=(document.getElementById("s-search")||{value:""}).value.toLowerCase().trim();
+  var stFlt=(document.getElementById("s-status-filter")||{value:"all"}).value;
+  var exFlt=(document.getElementById("s-exit-filter")||{value:"active"}).value;
+  var list=S.students.filter(function(s){
+    if(exFlt==="active"&&s.exit_date)return false;
+    if(exFlt==="exited"&&!s.exit_date)return false;
+    if(_curCourseFilter!=="all"&&s.course!==_curCourseFilter)return false;
+    if(q){var hay=[s.name,s.room,s.phone,s.course,s.email].join(" ").toLowerCase();if(!hay.includes(q))return false;}
+    if(stFlt!=="all"){var sr=S.monthSummary.hostel.find(function(x){return String(x.studentId)===String(s.id);});if((sr?sr.status:"pending")!==stFlt)return false;}
+    return true;
+  });
+  var rc=document.getElementById("s-result-count");if(rc)rc.textContent=list.length+" student"+(list.length!==1?"s":"");
+  var grid=document.getElementById("s-grid");if(!grid)return;
+  if(!list.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1;padding:30px 0">No students found</div>';return;}
+  grid.innerHTML=list.map(function(s){
+    var sr=S.monthSummary.hostel.find(function(x){return String(x.studentId)===String(s.id);});
+    var st=sr?sr.status:"—";var bal=sr?Number(sr.balance||0):0;
+    var libMember=S.libMembers.find(function(m){return String(m.linked_hostel_id)===String(s.id)&&!m.exit_date;});
+    return'<div class="s-card" onclick="openStudentDetail(\''+s.id+'\')"> '
+      +'<div class="s-card-top">'+av(s.name,38)+'<div><div class="s-card-name">'+s.name+'</div><div class="s-card-sub">'+(s.room?"🏠 "+s.room:"No room assigned")+(s.course?" · "+s.course:"")+'</div></div></div>'
+      +'<div class="s-card-bot"><div class="s-card-meta">'+fmtDate(s.joining_date)+(libMember?' <span class="lib-badge">Lib</span>':"")+'</div>'
+      +(st!=="—"?chip(st)+(bal>0?'<span class="bal-badge">₹'+bal.toLocaleString("en-IN")+'</span>':""):"")+'</div></div>';
+  }).join("");
+}
+
+function openStudentDetail(id){S.selected=id;S.tab="students";renderStudentDetail(id);}
+function renderStudentDetail(id){
+  var s=S.students.find(function(x){return String(x.id)===String(id);});
+  if(!s){go("students");return;}
+  var libMember=S.libMembers.find(function(m){return String(m.linked_hostel_id)===String(s.id)&&!m.exit_date;});
+  var sr=S.monthSummary.hostel.find(function(x){return String(x.studentId)===String(s.id);});
+  var curLeave=S.leaves.find(function(l){return String(l.student_id)===String(s.id)&&l.is_current;});
+  var mn=MONTHS[S.curMonth-1]+" "+S.curYear;
+
+  setContent(
+    '<button class="back-btn" onclick="S.selected=null;renderStudents()">← Back to Students</button>'
+    +'<div class="card"><div class="profile-top">'+av(s.name,52)
+    +'<div><div class="profile-name">'+s.name+(s.exit_date?'<span class="chip chip-exited" style="margin-left:8px;font-size:11px">Exited</span>':"")+'</div>'
+    +'<div class="profile-sub">'+(s.room?"🏠 Room "+s.room+" · ":"")+(s.course||"")+'</div></div>'
+    +'<div style="margin-left:auto;display:flex;gap:7px;flex-wrap:wrap">'
+    +'<button class="btn-sm btn-blue" onclick="openEditStudent(\''+s.id+'\')">✏️ Edit</button>'
+    +(!s.exit_date?'<button class="btn-sm btn-red" onclick="doHostelExit(\''+s.id+'\')">🚪 Exit</button>':"")
+    +'<button class="btn-sm btn-orange" onclick="showIdCard(\''+s.id+'\',\'hostel\')">🪪 ID Card</button>'
+    +(!s.exit_date&&!libMember?'<button class="btn-sm btn-green" onclick="doLinkLibrary(\''+s.id+'\')">📚 Enroll Library</button>':"")
+    +'<button class="btn-sm btn-gray" onclick="openDelete(\''+s.id+'\',\'hostel\',\''+s.name.replace(/'/g,"")+'\''+')" style="background:#fce4ec;color:#c62828">🗑️ Delete</button>'
+    +'</div></div>'
+    +'<div class="detail-grid"><div>'
+    +frow("📞 Phone",fmt(s.phone))+frow("📧 Email",fmt(s.email))+frow("🎂 DOB",fmtDate(s.dob))
+    +frow("📅 Joining",fmtDate(s.joining_date))+(s.exit_date?frow("🚪 Exit",fmtDate(s.exit_date)):"")
+    +'</div><div>'
+    +frow("💰 Monthly Fee",fmtM(s.monthly_fee_amount))
+    +(Number(s.discount)>0?frow("🏷️ Discount",fmtM(s.discount)):"")
+    +frow("📆 Due Day",dueDayLabel(s))+frow("📝 Notes",fmt(s.notes))
+    +(libMember?frow("📚 Library",'<span class="lib-badge" style="cursor:pointer" onclick="openLibDetail(\''+libMember.id+'\')">Seat '+fmt(libMember.seat_number)+'</span>'):"")
+    +'</div></div></div>'
+
+    +(sr?'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">₹ '+mn+' Fee</div>'
+      +'<div style="display:flex;gap:6px">'
+      +(sr.status!=="paid"?'<button class="btn-sm btn-pay" onclick="openPayModal(\''+sr.id+'\',\'hostel\',\''+s.id+'\',\''+mn+'\')">💳 Pay</button>':"")
+      +(sr.status==="paid"||sr.status==="partial"?'<button class="btn-sm btn-blue" onclick="doReceipt(\'hostel\',\''+sr.id+'\',\''+s.id+'\')">📄 Receipt</button>':"")
+      +'<button class="btn-sm btn-yellow" onclick="openAdvance(\''+s.id+'\',\'hostel\',\''+s.name+'\')">📅 Advance</button>'
+      +'<button class="btn-sm btn-gray" onclick="openWA(\'hostel\',\''+s.id+'\','+S.curMonth+','+S.curYear+')">📱 WhatsApp</button>'
+      +'</div></div>'
+      +'<div class="g2" style="margin:0"><div>'+frow("Monthly",fmtM(sr.total))+frow("Discount",fmtM(sr.discount||0))+frow("Net Payable",fmtM(sr.net))+'</div>'
+      +'<div>'+frow("Paid",fmtM(sr.paid||0))+frow("Balance",fmtM(sr.balance||0))+frow("Status",chip(sr.status))+frow("Due",fmtDate(sr.dueDate))+'</div></div></div>':"")
+
+    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">📋 Leave</div>'
+    +'<button class="btn-sm btn-yellow" onclick="openLeaveModal(\''+s.id+'\',\''+s.name.replace(/'/g,"")+'\')">+ Grant Leave</button>'
+    +'</div>'
+    +(curLeave?'<div class="leave-cur"><div><b>On Leave</b><div style="font-size:11px;color:#64748b">'+fmtDate(curLeave.from_date)+' → '+fmtDate(curLeave.to_date)+'</div></div><button class="btn-outline" onclick="doEndLeave(\''+curLeave.id+'\')">End Leave</button></div>':"")
+    +'<div id="s-fee-hist"></div>'
+    +'<button class="btn-sm btn-gray" style="margin-top:8px" onclick="loadFeeHistory(\''+s.id+'\',\'hostel\',\'s-fee-hist\')">Load Fee History</button>'
+    +'</div>'
+  );
+}
+
+async function loadFeeHistory(id,module,containerId){
+  var el=document.getElementById(containerId);
+  if(el)el.innerHTML='<div style="padding:8px;color:#94a3b8;font-size:12px">Loading…</div>';
+  var table=module==="library"?"library_fees":"monthly_fees";
+  var idField=module==="library"?"member_id":"student_id";
+  var res=await sb.from(table).select("*").eq(idField,id).order("year",{ascending:false}).order("month",{ascending:false});
+  var hist=res.data||[];
+  if(!hist.length){if(el)el.innerHTML='<div class="empty">No fee history yet</div>';return;}
+  var html=hist.map(function(r){
+    var st=String(r.status||"pending");
+    var paid=Number(r.paid_amount||0),bal=Number(r.balance||0),net=Number(r.net_amount||0);
+    return'<div class="fh-row '+st+'">'
+      +'<div style="flex:1"><div style="font-weight:700;font-size:12px">'+MONTHS[parseInt(r.month,10)-1]+' '+r.year+'</div>'
+      +'<div style="font-size:10px;color:#64748b">Due: '+fmtDate(r.due_date)+(r.mode?' · '+r.mode:'')+'</div></div>'
+      +'<div style="text-align:right">'
+      +'<div style="font-size:12px">Net: <strong>'+fmtM(net)+'</strong></div>'
+      +'<div style="font-size:11px;color:#2e7d32">Paid: '+fmtM(paid)+'</div>'
+      +(bal>0?'<div style="font-size:11px;color:#c62828">Bal: '+fmtM(bal)+'</div>':"")
+      +'</div>'+chip(st)
+      +(st!=="paid"?'<button class="btn-sm btn-pay" style="margin-left:4px" onclick="openPayModal(\''+r.id+'\',\''+module+'\',\''+id+'\',\''+MONTHS[parseInt(r.month,10)-1]+' '+r.year+'\')">Pay</button>':"")
+      +'</div>';
+  }).join("");
+  if(el)el.innerHTML='<div style="margin-top:8px">'+html+'</div>';
+}
+
+// ── MONTHLY FEES PAGE ────────────────────────────────────────
+function renderMonthlyFees(module){
+  var isLib=module==="library";
+  var color=isLib?"#2e7d32":"#1565c0";
+  var list=isLib?S.monthSummary.library:S.monthSummary.hostel;
+  var paid=list.filter(function(x){return x.status==="paid";});
+  var partial=list.filter(function(x){return x.status==="partial";});
+  var pending=list.filter(function(x){return x.status==="pending"||x.status==="overdue";});
+  var colAmt=list.reduce(function(a,x){return a+Number(x.paid||0);},0);
+  var balAmt=list.reduce(function(a,x){return a+Number(x.balance||0);},0);
+  var mn=MONTHS[S.curMonth-1]+" "+S.curYear;
+
+  function makeRows(items,showPay){
+    if(!items.length)return'<div class="empty" style="padding:12px 0">None</div>';
+    return items.map(function(x){
+      var sid=x.studentId||x.memberId;
+      return'<div class="bulk-row">'
+        +(showPay?'<input type="checkbox" class="bulk-check fee-chk-'+module+'" value="'+sid+'" title="'+x.name+'"/>':'<span style="width:15px"></span>')
+        +av(x.name,26)
+        +'<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px;cursor:pointer" onclick="'+(isLib?"openLibDetail":"openStudentDetail")+'(\''+sid+'\')">'+x.name+'</div>'
+        +'<div style="font-size:10px;color:#64748b">'+(x.room||x.seat?"📍 "+(x.room||x.seat)+" · ":"")+'Due '+fmtDate(x.dueDate)+'</div></div>'
+        +'<div style="text-align:right;font-size:12px"><div>Net: <strong>'+fmtM(x.net)+'</strong></div>'
+        +(Number(x.paid)>0?'<div style="color:#2e7d32">Paid: '+fmtM(x.paid)+'</div>':"")
+        +(Number(x.balance)>0?'<div style="color:#c62828">Bal: '+fmtM(x.balance)+'</div>':"")
+        +'</div>'+chip(x.status)
+        +'<div style="display:flex;gap:4px;margin-left:6px;flex-shrink:0">'
+        +(showPay&&x.id?'<button class="btn-sm btn-pay'+(isLib?" lib":"")+'\" onclick="openPayModal(\''+x.id+'\',\''+module+'\',\''+sid+'\',\''+mn+'\')">💳 Pay</button>':"")
+        +(x.status==="paid"||x.status==="partial"?'<button class="btn-sm btn-blue" onclick="doReceipt(\''+module+'\',\''+x.id+'\',\''+sid+'\')">📄</button>':"")
+        +'<button class="btn-sm btn-gray" onclick="openWA(\''+module+'\',\''+sid+'\','+S.curMonth+','+S.curYear+')">📱</button>'
+        +'</div></div>';
+    }).join("");
+  }
+
+  setContent(
+    '<div class="stats-grid">'
+    +sc("Paid",paid.length,fmtM(colAmt)+" collected","✅","#43a047")
+    +sc("Partial",partial.length,fmtM(partial.reduce(function(a,x){return a+Number(x.balance||0);},0))+" remaining","⚡","#e65100")
+    +sc("Pending",pending.length,fmtM(balAmt)+" total balance due","⏳","#f57f17")
+    +sc("Total",list.length,mn,"👥",color)
+    +'</div>'
+    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">Bulk Actions — '+mn+'</div>'
+    +'<div style="display:flex;gap:7px;flex-wrap:wrap">'
+    +'<button class="btn-sm btn-gray" onclick="selAllFeeChk(\''+module+'\',true)">Select All Unpaid</button>'
+    +'<button class="btn-sm btn-gray" onclick="selAllFeeChk(\''+module+'\',false)">Clear</button>'
+    +'<button class="btn-sm btn-pay'+(isLib?" lib":"")+'\" onclick="doBulkPay(\''+module+'\')">✓ Bulk Mark Paid</button>'
+    +'</div></div></div>'
+    +'<div class="fee-cols">'
+    +'<div class="fee-col" style="border-top-color:#43a047"><div class="fee-col-title" style="color:#43a047">✅ Paid ('+paid.length+')</div>'+makeRows(paid,false)+'</div>'
+    +'<div class="fee-col" style="border-top-color:#e65100"><div class="fee-col-title" style="color:#e65100">⚡ Partial ('+partial.length+')</div>'+makeRows(partial,true)+'</div>'
+    +'<div class="fee-col" style="border-top-color:#c62828"><div class="fee-col-title" style="color:#c62828">⏳ Pending / Overdue ('+pending.length+')</div>'+makeRows(pending,true)+'</div>'
+    +'</div>'
+  );
+}
+
+function selAllFeeChk(module,v){document.querySelectorAll(".fee-chk-"+module).forEach(function(ch){ch.checked=v;});}
+
+async function doBulkPay(module){
+  var ids=[];document.querySelectorAll(".fee-chk-"+module+":checked").forEach(function(ch){ids.push(ch.value);});
+  if(!ids.length){toast("Select students first","err");return;}
+  if(!confirm("Mark "+ids.length+" students as paid for "+MONTHS[S.curMonth-1]+"?"))return;
+  toast("Processing…");
+  var m=S.curMonth,y=S.curYear,paid=0;
+  var list=module==="library"?S.libMembers:S.students;
+  var table=module==="library"?"library_fees":"monthly_fees";
+  var idField=module==="library"?"member_id":"student_id";
+  for(var i=0;i<ids.length;i++){
+    var sid=ids[i];
+    var item=list.find(function(x){return String(x.id)===String(sid);});if(!item)continue;
+    var res=await sb.from(table).select("*").eq(idField,sid).eq("month",m).eq("year",y).maybeSingle();
+    var fee=res.data;
+    var net=Number(item.monthly_fee_amount||0)-Number(item.discount||0);
+    if(fee){await sb.from(table).update({paid_amount:net,balance:0,status:"paid"}).eq("id",fee.id);}
+    else{var newFee={id:uid(module==="library"?"LF":"HF"),month:m,year:y,due_date:computeDueDate(item,m,y),total_amount:Number(item.monthly_fee_amount||0),discount:Number(item.discount||0),net_amount:net,paid_amount:net,balance:0,status:"paid",mode:"cash"};newFee[idField]=sid;newFee[module==="library"?"member_name":"student_name"]=item.name;await sb.from(table).insert(newFee);}
+    paid++;
+  }
+  toast("Marked "+paid+" as paid ✓","ok");loadData();
+}
+
+// ── PAYMENT MODAL ─────────────────────────────────────────────
+function openPayModal(feeId,module,studentId,monthLabel){
+  setV("pay-fee-id",feeId);setV("pay-module",module);setV("pay-student-id",studentId);
+  setV("pay-amount","");setV("pay-mode","");setV("pay-note","");
+  var ms=module==="library"?S.monthSummary.library:S.monthSummary.hostel;
+  var rec=ms.find(function(x){return x.id===feeId;});
+  if(rec){document.getElementById("pay-summary").innerHTML=frow("Net Payable",fmtM(rec.net))+frow("Already Paid",fmtM(rec.paid||0))+frow("Balance",fmtM(rec.balance||0))+frow("Status",chip(rec.status));}
+  document.getElementById("pay-title").textContent="💳 Record Payment — "+monthLabel;
+  var btn=document.getElementById("btn-pay");
+  btn.className="btn-primary"+(module==="library"?" lib":"");
+  openM("m-pay");
+}
+
+async function submitPayment(){
+  var feeId=v("pay-fee-id"),module=v("pay-module"),studentId=v("pay-student-id");
+  var amount=Number(v("pay-amount")),mode=v("pay-mode"),note=v("pay-note");
+  if(!amount||amount<=0){toast("Enter a valid amount","err");return;}
+  var btn=document.getElementById("btn-pay");btn.disabled=true;btn.textContent="Recording…";
+  var table=module==="library"?"library_fees":"monthly_fees";
+  var idField=module==="library"?"member_id":"student_id";
+
+  try {
+    var res=await sb.from(table).select("*").eq("id",feeId).maybeSingle();
+    var fee=res.data;
+    if(!fee){
+      // Fee record doesn't exist yet — create it first
+      var list=module==="library"?S.libMembers:S.students;
+      var item=list.find(function(x){return String(x.id)===String(studentId);});
+      if(!item){toast("Student not found","err");btn.disabled=false;btn.textContent="Record Payment";return;}
+      var net=Number(item.monthly_fee_amount||0)-Number(item.discount||0);
+      var newFee={id:feeId||uid(module==="library"?"LF":"HF"),month:S.curMonth,year:S.curYear,due_date:computeDueDate(item,S.curMonth,S.curYear),total_amount:Number(item.monthly_fee_amount||0),discount:Number(item.discount||0),net_amount:net,paid_amount:0,balance:net,status:"pending"};
+      newFee[idField]=studentId;newFee[module==="library"?"member_name":"student_name"]=item.name;
+      await sb.from(table).insert(newFee);
+      res=await sb.from(table).select("*").eq("id",newFee.id).single();
+      fee=res.data;
+    }
+    var newPaid=Number(fee.paid_amount||0)+amount;
+    var newBal=Math.max(0,Number(fee.net_amount||0)-newPaid);
+    var status=newBal<=0?"paid":newPaid>0?"partial":"pending";
+    await sb.from(table).update({paid_amount:newPaid,balance:newBal,status:status,mode:mode,note:note}).eq("id",fee.id);
+    // Log payment
+    var list2=module==="library"?S.libMembers:S.students;
+    var item2=list2.find(function(x){return String(x.id)===String(studentId);});
+    await sb.from("payment_log").insert({id:uid("TXN"),txn_date:today(),module:module,student_id:studentId,student_name:item2?item2.name:"",month:fee.month,year:fee.year,amount:amount,mode:mode,note:note,fee_record_id:fee.id});
+    btn.disabled=false;btn.textContent="Record Payment";closeM("m-pay");toast("Payment recorded ✓","ok");loadData();
+  } catch(e){btn.disabled=false;btn.textContent="Record Payment";toast(e.message,"err");}
+}
+
+// ── LIBRARY ───────────────────────────────────────────────────
+function renderLibrary(){
+  var html='<div class="search-bar">'
+    +'<input class="search-inp" id="l-search" placeholder="🔍 Search by name, seat, phone, course…" oninput="filterLibrary()"/>'
+    +'<select class="filter-sel" id="l-status-filter" onchange="filterLibrary()"><option value="all">All Status</option><option value="paid">Paid</option><option value="partial">Partial</option><option value="pending">Pending</option><option value="overdue">Overdue</option></select>'
+    +'<select class="filter-sel" id="l-exit-filter" onchange="filterLibrary()"><option value="active">Active</option><option value="exited">Exited</option><option value="all">All</option></select>'
+    +'</div>';
+  html+='<div id="l-result-count" class="result-count"></div><div id="l-grid" class="s-grid"></div>';
+  setContent(html);filterLibrary();
+}
+
+function filterLibrary(){
+  var q=(document.getElementById("l-search")||{value:""}).value.toLowerCase().trim();
+  var stF=(document.getElementById("l-status-filter")||{value:"all"}).value;
+  var exF=(document.getElementById("l-exit-filter")||{value:"active"}).value;
+  var list=S.libMembers.filter(function(m){
+    if(exF==="active"&&m.exit_date)return false;
+    if(exF==="exited"&&!m.exit_date)return false;
+    if(q){var hay=[m.name,m.seat_number,m.phone,m.course,m.email].join(" ").toLowerCase();if(!hay.includes(q))return false;}
+    if(stF!=="all"){var sr=S.monthSummary.library.find(function(x){return String(x.memberId)===String(m.id);});if((sr?sr.status:"pending")!==stF)return false;}
+    return true;
+  });
+  var rc=document.getElementById("l-result-count");if(rc)rc.textContent=list.length+" member"+(list.length!==1?"s":"");
+  var grid=document.getElementById("l-grid");if(!grid)return;
+  if(!list.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1;padding:30px 0">No members found</div>';return;}
+  grid.innerHTML=list.map(function(m){
+    var sr=S.monthSummary.library.find(function(x){return String(x.memberId)===String(m.id);});
+    var st=sr?sr.status:"—";var bal=sr?Number(sr.balance||0):0;
+    return'<div class="s-card lib" onclick="openLibDetail(\''+m.id+'\')"> '
+      +'<div class="s-card-top">'+av(m.name,38,"#2e7d32")+'<div><div class="s-card-name">'+m.name+'</div><div class="s-card-sub">'+(m.seat_number?"📚 Seat "+m.seat_number+" · ":"")+(m.course||"")+'</div></div></div>'
+      +'<div class="s-card-bot"><div class="s-card-meta">'+fmtDate(m.joining_date)+'</div>'
+      +(st!=="—"?chip(st)+(bal>0?'<span class="bal-badge">₹'+bal.toLocaleString("en-IN")+'</span>':""):"")+'</div></div>';
+  }).join("");
+}
+
+function openLibDetail(id){S.selected=id;S.tab="library";renderLibDetail(id);}
+function renderLibDetail(id){
+  var m=S.libMembers.find(function(x){return String(x.id)===String(id);});if(!m){go("library");return;}
+  var sr=S.monthSummary.library.find(function(x){return String(x.memberId)===String(id);});
+  var hostelLink=m.linked_hostel_id?S.students.find(function(s){return String(s.id)===String(m.linked_hostel_id);}):null;
+  var mn=MONTHS[S.curMonth-1]+" "+S.curYear;
+  setContent(
+    '<button class="back-btn" onclick="S.selected=null;renderLibrary()">← Back to Library</button>'
+    +'<div class="card"><div class="profile-top">'+av(m.name,52,"#2e7d32")
+    +'<div><div class="profile-name">'+m.name+(m.exit_date?'<span class="chip chip-exited" style="margin-left:8px;font-size:11px">Exited</span>':"")+'</div>'
+    +'<div class="profile-sub">'+(m.seat_number?"📚 Seat "+m.seat_number+" · ":"")+(m.course||"")+'</div></div>'
+    +'<div style="margin-left:auto;display:flex;gap:7px;flex-wrap:wrap">'
+    +'<button class="btn-sm btn-blue" onclick="openEditLibMember(\''+m.id+'\')">✏️ Edit</button>'
+    +(!m.exit_date?'<button class="btn-sm btn-red" onclick="doLibExit(\''+m.id+'\')">🚪 Exit</button>':"")
+    +'<button class="btn-sm btn-orange" onclick="showIdCard(\''+m.id+'\',\'library\')">🪪 ID Card</button>'
+    +'<button class="btn-sm btn-gray" onclick="openDelete(\''+m.id+'\',\'library\',\''+m.name.replace(/'/g,"")+'\''+')" style="background:#fce4ec;color:#c62828">🗑️ Delete</button>'
+    +'</div></div>'
+    +'<div class="detail-grid"><div>'+frow("📞 Phone",fmt(m.phone))+frow("📧 Email",fmt(m.email))+frow("🎂 DOB",fmtDate(m.dob))+frow("📅 Joining",fmtDate(m.joining_date))+(m.exit_date?frow("🚪 Exit",fmtDate(m.exit_date)):"")+'</div>'
+    +'<div>'+frow("💰 Monthly Fee",fmtM(m.monthly_fee_amount))+(Number(m.discount)>0?frow("🏷️ Discount",fmtM(m.discount)):"")+frow("📆 Due Day",dueDayLabel(m))+frow("📝 Notes",fmt(m.notes))+(hostelLink?frow("🏠 Hostel",'<span style="cursor:pointer;color:#1565c0" onclick="openStudentDetail(\''+hostelLink.id+'\')">'+hostelLink.name+'</span>'):"")+'</div></div></div>'
+    +(sr?'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">₹ '+mn+' Fee</div>'
+      +'<div style="display:flex;gap:6px">'
+      +(sr.status!=="paid"?'<button class="btn-sm btn-pay lib" onclick="openPayModal(\''+sr.id+'\',\'library\',\''+m.id+'\',\''+mn+'\')">💳 Pay</button>':"")
+      +(sr.status==="paid"||sr.status==="partial"?'<button class="btn-sm btn-blue" onclick="doReceipt(\'library\',\''+sr.id+'\',\''+m.id+'\')">📄 Receipt</button>':"")
+      +'<button class="btn-sm btn-yellow" onclick="openAdvance(\''+m.id+'\',\'library\',\''+m.name+'\')">📅 Advance</button>'
+      +'<button class="btn-sm btn-gray" onclick="openWA(\'library\',\''+m.id+'\','+S.curMonth+','+S.curYear+')">📱 WhatsApp</button>'
+      +'</div></div>'
+      +'<div class="g2" style="margin:0"><div>'+frow("Monthly",fmtM(sr.total))+frow("Discount",fmtM(sr.discount||0))+frow("Net Payable",fmtM(sr.net))+'</div>'
+      +'<div>'+frow("Paid",fmtM(sr.paid||0))+frow("Balance",fmtM(sr.balance||0))+frow("Status",chip(sr.status))+frow("Due",fmtDate(sr.dueDate))+'</div></div></div>':"")
+    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">📜 Fee History</div></div>'
+    +'<div id="l-fee-hist"></div><button class="btn-sm btn-gray" onclick="loadFeeHistory(\''+m.id+'\',\'library\',\'l-fee-hist\')">Load Fee History</button></div>'
+  );
+}
+
+// ── LEAVE ─────────────────────────────────────────────────────
+function renderLeave(){
+  var active=S.students.filter(function(s){return !s.exit_date;});
+  var curLeaves=S.leaves.filter(function(l){return l.is_current;});
+  var html='<div class="g2">'
+    +'<div class="card"><div class="card-title">👥 Grant Leave to Student</div>'
+    +'<div style="margin-bottom:10px"><input class="search-inp" id="leave-search" placeholder="Search student…" oninput="filterLeaveStudents()" style="width:100%"/></div>'
+    +'<div id="leave-student-list" style="max-height:320px;overflow-y:auto"></div></div>'
+    +'<div class="card"><div class="card-title">📋 Currently on Leave ('+curLeaves.length+')</div>'
+    +(curLeaves.length?curLeaves.map(function(l){return'<div class="leave-cur"><div><div style="font-weight:700;font-size:13px">'+l.student_name+'</div><div style="font-size:11px;color:#64748b">'+fmtDate(l.from_date)+' → '+fmtDate(l.to_date)+'</div><div style="font-size:11px">'+fmt(l.reason)+'</div></div><button class="btn-outline" onclick="doEndLeave(\''+l.id+'\')">End Leave</button></div>';}).join(""):'<div class="empty">No active leaves</div>')
+    +'</div></div>';
+  setContent(html);
+  filterLeaveStudents();
+}
+
+function filterLeaveStudents(){
+  var q=(document.getElementById("leave-search")||{value:""}).value.toLowerCase();
+  var list=S.students.filter(function(s){return !s.exit_date&&(!q||s.name.toLowerCase().includes(q));}).slice(0,20);
+  var el=document.getElementById("leave-student-list");if(!el)return;
+  el.innerHTML=list.map(function(s){
+    var onLeave=S.leaves.find(function(l){return String(l.student_id)===String(s.id)&&l.is_current;});
+    return'<div class="bulk-row">'+av(s.name,28)+'<div style="flex:1;font-size:13px;font-weight:600">'+s.name+(s.room?' <span style="color:#94a3b8;font-weight:400;font-size:11px">'+s.room+'</span>':'')+'</div>'
+      +(onLeave?'<span class="chip chip-pending">On Leave</span>':'<button class="btn-sm btn-yellow" onclick="openLeaveModal(\''+s.id+'\',\''+s.name.replace(/'/g,"")+'\')">+ Grant</button>')+'</div>';
+  }).join("");
+}
+
+function openLeaveModal(sid,sname){setV("leave-student-id",sid);setV("leave-student-name",sname);document.getElementById("leave-sub").textContent="Student: "+sname;setV("leave-from","");setV("leave-to","");document.getElementById("leave-reason").value="";openM("m-leave");}
+async function submitLeave(){
+  var sid=v("leave-student-id"),sname=v("leave-student-name"),from=v("leave-from"),to=v("leave-to"),reason=document.getElementById("leave-reason").value.trim();
+  if(!from||!to){toast("Enter from and to dates","err");return;}
+  // End any current leave
+  await sb.from("leaves").update({is_current:false,status:"ended"}).eq("student_id",sid).eq("is_current",true);
+  await sb.from("leaves").insert({id:uid("L"),student_id:sid,student_name:sname,from_date:from,to_date:to,reason:reason,status:"approved",is_current:true});
+  closeM("m-leave");toast("Leave granted ✓");loadData();
+}
+async function doEndLeave(lid){
+  await sb.from("leaves").update({is_current:false,status:"ended"}).eq("id",lid);
+  toast("Leave ended ✓");loadData();
+}
+
+// ── CRUD: STUDENTS ────────────────────────────────────────────
+async function submitAddStudent(){
+  if(!v("as-name")){toast("Name is required","err");return;}
+  if(!v("as-fee")){toast("Monthly fee is required","err");return;}
+  var btn=document.getElementById("btn-add-s");btn.disabled=true;btn.textContent="Adding…";
+  var id=uid("S");
+  var d={id:id,name:v("as-name"),room:v("as-room"),course:v("as-course"),phone:v("as-phone"),email:v("as-email"),dob:v("as-dob")||null,joining_date:v("as-join")||null,monthly_fee_amount:Number(v("as-fee"))||0,fee_day:parseInt(v("as-feeday"))||1,override_due_date:parseInt(v("as-override-due"))||null,discount:Number(v("as-discount"))||0,notes:v("as-notes")};
+  try{
+    await sb.from("hostel_students").insert(d);
+    var m=S.curMonth,y=S.curYear,net=Math.max(0,d.monthly_fee_amount-d.discount);
+    await sb.from("monthly_fees").insert({id:uid("HF"),student_id:id,student_name:d.name,month:m,year:y,due_date:computeDueDate(d,m,y),total_amount:d.monthly_fee_amount,discount:d.discount,net_amount:net,paid_amount:0,balance:net,status:"pending"});
+    btn.disabled=false;btn.textContent="Add Student";closeM("m-add-student");toast("Student added ✓");
+    ["as-name","as-room","as-course","as-phone","as-email","as-dob","as-join","as-fee","as-feeday","as-override-due","as-discount","as-notes"].forEach(function(i){setV(i,"");});
+    loadData();
+  }catch(e){btn.disabled=false;btn.textContent="Add Student";toast(e.message,"err");}
+}
+
+function openEditStudent(id){
+  var s=S.students.find(function(x){return String(x.id)===String(id);});if(!s)return;
+  document.getElementById("edit-s-sub").textContent="Editing: "+s.name;
+  setV("edit-s-id",id);setV("es-name",s.name);setV("es-room",s.room);setV("es-course",s.course);
+  setV("es-phone",s.phone);setV("es-email",s.email);setV("es-dob",s.dob);
+  setV("es-join",s.joining_date);setV("es-exit",s.exit_date);
+  setV("es-fee",s.monthly_fee_amount);setV("es-feeday",s.fee_day);
+  setV("es-override-due",s.override_due_date);setV("es-discount",s.discount);setV("es-notes",s.notes);
+  openM("m-edit-student");
+}
+async function submitEditStudent(){
+  var id=v("edit-s-id");if(!v("es-name")){toast("Name required","err");return;}
+  var btn=document.getElementById("btn-edit-s");btn.disabled=true;btn.textContent="Saving…";
+  var upd={name:v("es-name"),room:v("es-room"),course:v("es-course"),phone:v("es-phone"),email:v("es-email"),dob:v("es-dob")||null,joining_date:v("es-join")||null,exit_date:v("es-exit")||null,monthly_fee_amount:Number(v("es-fee"))||0,fee_day:parseInt(v("es-feeday"))||null,override_due_date:parseInt(v("es-override-due"))||null,discount:Number(v("es-discount"))||0,notes:v("es-notes")};
+  try{await sb.from("hostel_students").update(upd).eq("id",id);btn.disabled=false;btn.textContent="Save Changes";closeM("m-edit-student");toast("Saved ✓");loadData();}
+  catch(e){btn.disabled=false;btn.textContent="Save Changes";toast(e.message,"err");}
+}
+async function doHostelExit(id){
+  if(!confirm("Mark as exited today?"))return;
+  await sb.from("hostel_students").update({exit_date:today()}).eq("id",id);
+  toast("Exit recorded");loadData();
+}
+
+// ── CRUD: LIBRARY ─────────────────────────────────────────────
+async function submitAddLibMember(){
+  if(!v("al-name")){toast("Name required","err");return;}
+  var btn=document.getElementById("btn-add-lib");btn.disabled=true;btn.textContent="Adding…";
+  var id=uid("LM");
+  var d={id:id,name:v("al-name"),seat_number:v("al-seat"),course:v("al-course"),phone:v("al-phone"),email:v("al-email"),dob:v("al-dob")||null,joining_date:v("al-join")||null,monthly_fee_amount:Number(v("al-fee"))||0,fee_day:parseInt(v("al-feeday"))||1,override_due_date:parseInt(v("al-override-due"))||null,discount:Number(v("al-discount"))||0,notes:v("al-notes")};
+  try{
+    await sb.from("library_members").insert(d);
+    var m=S.curMonth,y=S.curYear,net=Math.max(0,d.monthly_fee_amount-d.discount);
+    await sb.from("library_fees").insert({id:uid("LF"),member_id:id,member_name:d.name,month:m,year:y,due_date:computeDueDate(d,m,y),total_amount:d.monthly_fee_amount,discount:d.discount,net_amount:net,paid_amount:0,balance:net,status:"pending"});
+    btn.disabled=false;btn.textContent="Add Member";closeM("m-add-lib");toast("Member added ✓","lib");
+    ["al-name","al-seat","al-course","al-phone","al-email","al-dob","al-join","al-fee","al-feeday","al-override-due","al-discount","al-notes"].forEach(function(i){setV(i,"");});
+    loadData();
+  }catch(e){btn.disabled=false;btn.textContent="Add Member";toast(e.message,"err");}
+}
+function openEditLibMember(id){
+  var m=S.libMembers.find(function(x){return String(x.id)===String(id);});if(!m)return;
+  document.getElementById("edit-l-sub").textContent="Editing: "+m.name;
+  setV("edit-l-id",id);setV("el-name",m.name);setV("el-seat",m.seat_number);setV("el-course",m.course);
+  setV("el-phone",m.phone);setV("el-email",m.email);setV("el-dob",m.dob);
+  setV("el-join",m.joining_date);setV("el-exit",m.exit_date);
+  setV("el-fee",m.monthly_fee_amount);setV("el-feeday",m.fee_day);
+  setV("el-override-due",m.override_due_date);setV("el-discount",m.discount);setV("el-notes",m.notes);
+  openM("m-edit-lib");
+}
+async function submitEditLibMember(){
+  var id=v("edit-l-id");if(!v("el-name")){toast("Name required","err");return;}
+  var btn=document.getElementById("btn-edit-lib");btn.disabled=true;btn.textContent="Saving…";
+  var upd={name:v("el-name"),seat_number:v("el-seat"),course:v("el-course"),phone:v("el-phone"),email:v("el-email"),dob:v("el-dob")||null,joining_date:v("el-join")||null,exit_date:v("el-exit")||null,monthly_fee_amount:Number(v("el-fee"))||0,fee_day:parseInt(v("el-feeday"))||null,override_due_date:parseInt(v("el-override-due"))||null,discount:Number(v("el-discount"))||0,notes:v("el-notes")};
+  try{await sb.from("library_members").update(upd).eq("id",id);btn.disabled=false;btn.textContent="Save Changes";closeM("m-edit-lib");toast("Saved ✓","lib");loadData();}
+  catch(e){btn.disabled=false;btn.textContent="Save Changes";toast(e.message,"err");}
+}
+async function doLibExit(id){
+  if(!confirm("Mark as exited?"))return;
+  await sb.from("library_members").update({exit_date:today()}).eq("id",id);
+  toast("Exit recorded","lib");loadData();
+}
+async function doLinkLibrary(hostelId){
+  if(!confirm("Enroll this student as a library member?"))return;
+  var s=S.students.find(function(x){return String(x.id)===String(hostelId);});if(!s)return;
+  var ex=S.libMembers.find(function(m){return String(m.linked_hostel_id)===String(hostelId)&&!m.exit_date;});
+  if(ex){toast("Already a library member","err");return;}
+  var id=uid("LM");
+  await sb.from("library_members").insert({id:id,name:s.name,phone:s.phone,email:s.email,course:s.course,joining_date:today(),monthly_fee_amount:0,fee_day:s.fee_day||1,discount:0,linked_hostel_id:hostelId,notes:"Enrolled from Hostel"});
+  toast("Enrolled in library ✓","lib");loadData();
+}
+
+// ── DELETE ────────────────────────────────────────────────────
+function openDelete(id,module,name){setV("del-id",id);setV("del-module",module);document.getElementById("del-sub").textContent='Delete "'+name+'" from '+module+'?';openM("m-delete");}
+async function confirmDelete(){
+  var id=v("del-id"),module=v("del-module");
+  var table=module==="library"?"library_members":"hostel_students";
+  var item=(module==="library"?S.libMembers:S.students).find(function(x){return String(x.id)===String(id);});
+  await sb.from("deleted_records").insert({deleted_at:today(),module:module,original_id:id,name:item?item.name:"",data:JSON.stringify(item||{})});
+  await sb.from(table).delete().eq("id",id);
+  closeM("m-delete");toast("Deleted & archived");S.selected=null;loadData();
+}
+
+// ── WHATSAPP ──────────────────────────────────────────────────
+function openWA(module,studentId,month,year){
+  var list=module==="library"?S.libMembers:S.students;
+  var item=list.find(function(x){return String(x.id)===String(studentId);});if(!item){toast("Not found","err");return;}
+  var ms=module==="library"?S.monthSummary.library:S.monthSummary.hostel;
+  var fee=ms.find(function(x){return String(x.studentId||x.memberId)===String(studentId);});
+  var net=Number(item.monthly_fee_amount||0),bal=fee?Number(fee.balance||0):net,due=fee?fee.dueDate:"";
+  var tmpl=(S.settings&&S.settings.wa_template)||"Dear {name}, your fee Rs.{net} for {month}/{year} is due on {dueDate}. Balance: Rs.{balance}.";
+  var msg=tmpl.replace(/{name}/g,item.name).replace(/{net}/g,net).replace(/{month}/g,month).replace(/{year}/g,year).replace(/{dueDate}/g,due).replace(/{balance}/g,bal).replace(/{amount}/g,net);
+  var phone=String(item.phone||"").replace(/\D/g,"");
+  document.getElementById("wa-name").textContent=item.name;
+  document.getElementById("wa-phone").textContent="+"+phone;
+  document.getElementById("wa-msg").textContent=msg;
+  document.getElementById("wa-link").href="https://wa.me/"+phone+"?text="+encodeURIComponent(msg);
+  openM("m-wa");
+}
+
+// ── ADVANCE ──────────────────────────────────────────────────
+function openAdvance(sid,module,sname){setV("adv-student-id",sid);setV("adv-module",module);document.getElementById("adv-sub").textContent=sname;openM("m-advance");}
+async function submitAdvance(){
+  var sid=v("adv-student-id"),module=v("adv-module"),n=parseInt(v("adv-months"))||1;
+  var list=module==="library"?S.libMembers:S.students;
+  var item=list.find(function(x){return String(x.id)===String(sid);});if(!item){toast("Not found","err");return;}
+  var table=module==="library"?"library_fees":"monthly_fees";
+  var idField=module==="library"?"member_id":"student_id";
+  var m=S.curMonth,y=S.curYear;
+  for(var i=0;i<n;i++){
+    var net=Math.max(0,Number(item.monthly_fee_amount||0)-Number(item.discount||0));
+    var res=await sb.from(table).select("id").eq(idField,sid).eq("month",m).eq("year",y).maybeSingle();
+    if(res.data){await sb.from(table).update({paid_amount:net,balance:0,status:"paid",mode:"advance"}).eq("id",res.data.id);}
+    else{var nf={id:uid(module==="library"?"LF":"HF"),month:m,year:y,due_date:computeDueDate(item,m,y),total_amount:Number(item.monthly_fee_amount||0),discount:Number(item.discount||0),net_amount:net,paid_amount:net,balance:0,status:"paid",mode:"advance"};nf[idField]=sid;nf[module==="library"?"member_name":"student_name"]=item.name;await sb.from(table).insert(nf);}
+    var nx=nextMY(m,y);m=nx.m;y=nx.y;
+  }
+  closeM("m-advance");toast("Advance paid for "+n+" month"+(n>1?"s":"")+" ✓","ok");loadData();
+}
+
+// ── RECEIPT ───────────────────────────────────────────────────
+async function doReceipt(module,feeId,studentId){
+  var table=module==="library"?"library_fees":"monthly_fees";
+  var res=await sb.from(table).select("*").eq("id",feeId).single();
+  var fee=res.data;if(!fee){toast("Fee record not found","err");return;}
+  var list=module==="library"?S.libMembers:S.students;
+  var item=list.find(function(x){return String(x.id)===String(studentId);});if(!item){toast("Student not found","err");return;}
+  var instName=(S.settings&&S.settings.inst_name)||"Coaching Institute";
+  var color=module==="library"?"#2e7d32":"#1565c0";
+  var html='<html><head><style>body{font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;font-size:13px}.hdr{text-align:center;border-bottom:3px solid '+color+';padding-bottom:12px;margin-bottom:14px}.inst{font-size:19px;font-weight:800;color:'+color+'}.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9}.lbl{color:#64748b}.val{font-weight:600}.amt-box{background:#f0f4ff;border-radius:8px;padding:14px;text-align:center;margin:14px 0}.amt{font-size:26px;font-weight:800;color:'+color+'}.stamp{color:#2e7d32;font-size:18px;font-weight:800;border:3px solid #2e7d32;border-radius:7px;display:inline-block;padding:3px 14px}.footer{text-align:center;font-size:10px;color:#94a3b8;margin-top:16px;border-top:1px solid #f1f5f9;padding-top:10px}</style></head><body>'
+    +'<div class="hdr"><div class="inst">'+instName+'</div><div style="color:#64748b;font-size:12px">'+(module==="library"?"Library":"Hostel")+' Fee Receipt | '+today()+'</div></div>'
+    +'<div class="row"><span class="lbl">Name</span><span class="val">'+item.name+'</span></div>'
+    +(item.room?'<div class="row"><span class="lbl">Room</span><span class="val">'+item.room+'</span></div>':'')
+    +(item.seat_number?'<div class="row"><span class="lbl">Seat</span><span class="val">'+item.seat_number+'</span></div>':'')
+    +'<div class="row"><span class="lbl">Month</span><span class="val">'+MONTHS[parseInt(fee.month,10)-1]+' '+fee.year+'</span></div>'
+    +'<div class="row"><span class="lbl">Net Payable</span><span class="val">₹'+Number(fee.net_amount||0).toLocaleString("en-IN")+'</span></div>'
+    +'<div class="amt-box"><div style="font-size:11px;color:#64748b;margin-bottom:4px">AMOUNT RECEIVED</div><div class="amt">₹'+Number(fee.paid_amount||0).toLocaleString("en-IN")+'</div>'
+    +(Number(fee.balance)>0?'<div style="font-size:12px;color:#f57f17;margin-top:4px">Balance: ₹'+Number(fee.balance).toLocaleString("en-IN")+'</div>':'')+'</div>'
+    +(fee.status==="paid"?'<div style="text-align:center"><span class="stamp">PAID IN FULL</span></div>':'')
+    +'<div class="footer">'+instName+' | Computer-generated receipt</div></body></html>';
+  var win=window.open("","_blank","width=640,height=700");if(win){win.document.write(html);win.document.close();}
+}
+
+// ── ID CARD ───────────────────────────────────────────────────
+function showIdCard(studentId,module){
+  var list=module==="library"?S.libMembers:S.students;
+  var item=list.find(function(x){return String(x.id)===String(studentId);});if(!item){toast("Not found","err");return;}
+  var instName=(S.settings&&S.settings.inst_name)||"Coaching Institute";
+  var color=module==="library"?"#2e7d32":"#1565c0";
+  var initials=(item.name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
+  var html='<div style="width:320px;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.18);background:#fff;margin:auto">'
+    +'<div style="background:'+color+';padding:16px;text-align:center;color:#fff;font-weight:800"><div>'+instName+'</div><div style="font-size:10px;letter-spacing:3px;opacity:.8">'+(module==="library"?"LIBRARY MEMBER":"HOSTEL STUDENT")+'</div></div>'
+    +'<div style="padding:16px;display:flex;gap:14px;align-items:center">'
+    +'<div style="width:64px;height:64px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:800;flex-shrink:0">'+initials+'</div>'
+    +'<div><div style="font-size:16px;font-weight:800;color:#1a2332">'+item.name+'</div>'
+    +(item.room?'<div style="font-size:11px;color:#64748b">Room: '+item.room+'</div>':'')
+    +(item.seat_number?'<div style="font-size:11px;color:#64748b">Seat: '+item.seat_number+'</div>':'')
+    +'<div style="font-size:11px;color:#64748b">'+(item.course||"—")+'</div>'
+    +'<div style="font-size:11px;color:#64748b">'+(item.phone||"—")+'</div></div></div>'
+    +'<div style="background:#f8fafc;padding:10px 16px;display:flex;justify-content:space-between;font-size:11px;border-top:1px solid #e2e8f0"><span style="background:'+color+';color:#fff;border-radius:4px;padding:2px 8px;font-weight:700">ID: '+String(studentId).slice(-8)+'</span><span style="color:#94a3b8">'+today()+'</span></div>'
+    +'</div>';
+  document.getElementById("id-card-frame").innerHTML=html;
+  openM("m-idcard");
+}
+function printIdCard(){window.print();}
+
+// ── REMINDERS ─────────────────────────────────────────────────
+function openReminderConfirm(module){
+  setV("remind-module",module);
+  var ms=module==="library"?S.monthSummary.library:S.monthSummary.hostel;
+  var pending=ms.filter(function(x){return x.status!=="paid";});
+  document.getElementById("remind-count").textContent=pending.length;
+  document.getElementById("remind-recipients").innerHTML=pending.slice(0,5).map(function(x){
+    return'<div class="recipient-row"><span>'+x.name+'</span><span style="color:#64748b">balance</span><span style="color:#c62828">₹'+Number(x.balance||0).toLocaleString("en-IN")+'</span></div>';
+  }).join("")+(pending.length>5?'<div style="color:#94a3b8;font-size:11px;padding:4px 0">…and '+(pending.length-5)+' more</div>':"");
+  openM("m-confirm-reminder");
+}
+function confirmSendReminders(){
+  toast("WhatsApp links must be sent individually. Use 📱 button per student.");
+  closeM("m-confirm-reminder");
+}
+
+// ── BROADCAST ─────────────────────────────────────────────────
+function renderBroadcast(){
+  setContent(
+    '<div style="max-width:600px">'
+    +'<div class="card"><div class="card-title">📣 Broadcast Notice</div>'
+    +'<div class="form-grid">'
+    +'<div class="fg full"><label class="flbl">Subject *</label><input class="finp" id="bc-subject" placeholder="e.g. Fee reminder for March"/></div>'
+    +'<div class="fg full"><label class="flbl">Message *</label><textarea class="bc-area" id="bc-message" placeholder="Type your message here…"></textarea></div>'
+    +'<div class="fg"><label class="flbl">Send To</label><select class="finp" id="bc-target"><option value="all">All (Hostel + Library)</option><option value="hostel">Hostel Students Only</option><option value="library">Library Members Only</option></select></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;margin-top:12px">'
+    +'<button class="btn-primary" onclick="sendBroadcast()">📣 Send Broadcast</button>'
+    +'</div></div>'
+    +'</div>'
+  );
+}
+
+async function sendBroadcast(){
+  var subject=v("bc-subject"),message=document.getElementById("bc-message").value.trim(),target=v("bc-target");
+  if(!subject||!message){toast("Fill subject and message","err");return;}
+  toast("Note: Email sending requires a server. This logs the broadcast. For emails, set up an email service.");
+  await sb.from("broadcast_log").insert({sent_at:today(),subject:subject,recipients:0,message:message.slice(0,500)});
+  toast("Broadcast logged ✓","ok");
+}
+
+// ── IMPORT ────────────────────────────────────────────────────
+var _importState={step:1,module:"hostel",rows:[],headers:[],mapping:{}};
+var IMPORT_FIELDS_HOSTEL=["name","room","course","phone","email","dob","joining_date","monthly_fee_amount","fee_day","discount","notes"];
+var IMPORT_FIELDS_LIB=["name","seat_number","course","phone","email","dob","joining_date","monthly_fee_amount","fee_day","discount","notes"];
+
+function renderImport(){
+  _importState.step=1;
+  setContent(buildImportHtml());
+}
+function buildImportHtml(){
+  if(_importState.step===1){
+    return'<div class="import-step"><div class="import-hdr">📥 Import Students / Members</div>'
+      +'<p style="font-size:13px;color:#64748b;margin-bottom:16px">Upload a CSV or Excel file to bulk-import records. Download a sample template to see the correct format.</p>'
+      +'<div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">'
+      +'<select class="finp" id="import-module" style="width:200px"><option value="hostel">Hostel Students</option><option value="library">Library Members</option></select>'
+      +'</div>'
+      +'<div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">'
+      +'<button class="btn-sm btn-blue" onclick="downloadTemplate(\'hostel\')">⬇️ Hostel Template</button>'
+      +'<button class="btn-sm btn-green" onclick="downloadTemplate(\'library\')">⬇️ Library Template</button>'
+      +'</div>'
+      +'<div class="fg"><label class="flbl">Upload CSV File</label><input type="file" id="import-file" accept=".csv" class="finp" onchange="handleImportFile(event)"/></div>'
+      +'</div>';
+  }
+  if(_importState.step===2){
+    var fields=_importState.module==="library"?IMPORT_FIELDS_LIB:IMPORT_FIELDS_HOSTEL;
+    return'<div class="import-step"><div class="import-hdr">Map Columns — Step 2 of 3</div>'
+      +'<p style="font-size:13px;color:#64748b;margin-bottom:12px">'+_importState.rows.length+' rows found. Match your CSV columns to the correct fields.</p>'
+      +'<table class="import-table"><tr><th>Your CSV Column</th><th>Maps To</th><th>Sample Value</th></tr>'
+      +_importState.headers.map(function(h){
+        var sample=_importState.rows[0]?(_importState.rows[0][h]||""):"";
+        return'<tr><td><strong>'+h+'</strong></td><td><select class="map-sel" data-col="'+h+'">'
+          +'<option value="">— Skip —</option>'
+          +fields.map(function(f){return'<option value="'+f+'"'+((_importState.mapping[h]===f)?' selected':'')+'>'+f+'</option>';}).join("")
+          +'</select></td><td style="color:#94a3b8">'+sample+'</td></tr>';
+      }).join("")
+      +'</table>'
+      +'<div style="display:flex;gap:8px;margin-top:14px">'
+      +'<button class="btn-sm btn-gray" onclick="_importState.step=1;setContent(buildImportHtml())">← Back</button>'
+      +'<button class="btn-primary" onclick="goImportPreview()">Preview →</button>'
+      +'</div></div>';
+  }
+  if(_importState.step===3){
+    var preview=_importState.rows.slice(0,5).map(function(row){
+      var d={};Object.keys(_importState.mapping).forEach(function(k){if(_importState.mapping[k])d[_importState.mapping[k]]=row[k];});
+      return d;
+    });
+    return'<div class="import-step"><div class="import-hdr">Preview — Step 3 of 3</div>'
+      +'<p style="font-size:13px;color:#64748b;margin-bottom:12px">Ready to import <strong>'+_importState.rows.length+'</strong> '+_importState.module+' records. First 5 shown below:</p>'
+      +'<table class="import-table"><tr><th>Name</th><th>Phone</th><th>Fee Amount</th><th>Joining Date</th></tr>'
+      +preview.map(function(d){return'<tr><td>'+fmt(d.name)+'</td><td>'+fmt(d.phone)+'</td><td>'+fmtM(d.monthly_fee_amount||0)+'</td><td>'+fmt(d.joining_date)+'</td></tr>';}).join("")
+      +'</table>'
+      +'<div style="display:flex;gap:8px;margin-top:14px">'
+      +'<button class="btn-sm btn-gray" onclick="_importState.step=2;setContent(buildImportHtml())">← Back</button>'
+      +'<button class="btn-primary" onclick="doImport()">✓ Import '+_importState.rows.length+' Records</button>'
+      +'</div></div>';
+  }
+}
+
+function downloadTemplate(module){
+  var fields=module==="library"?IMPORT_FIELDS_LIB:IMPORT_FIELDS_HOSTEL;
+  var csv=fields.join(",")+"\n"+(module==="hostel"?"Rahul Sharma,A-101,B.Tech,9876543210,rahul@email.com,2000-01-15,2024-01-01,5000,1,0,Good student":"Priya Singh,S-12,B.Sc,9876543211,priya@email.com,2001-03-20,2024-01-01,3000,5,0,");
+  var blob=new Blob([csv],{type:"text/csv"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=module+"_template.csv";a.click();
+}
+
+function handleImportFile(e){
+  _importState.module=(document.getElementById("import-module")||{value:"hostel"}).value;
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var lines=ev.target.result.split("\n").map(function(l){return l.trim();}).filter(Boolean);
+    if(lines.length<2){toast("CSV needs at least 2 rows (header + data)","err");return;}
+    var headers=lines[0].split(",").map(function(h){return h.trim().replace(/^"|"$/g,"");});
+    var rows=lines.slice(1).map(function(line){
+      var vals=line.split(",").map(function(v){return v.trim().replace(/^"|"$/g,"");});
+      var obj={};headers.forEach(function(h,i){obj[h]=vals[i]||"";});return obj;
+    });
+    _importState.headers=headers;_importState.rows=rows;
+    var auto={};headers.forEach(function(h){var l=h.toLowerCase().replace(/\s+/g,"_");if(IMPORT_FIELDS_HOSTEL.indexOf(l)!==-1)auto[h]=l;});
+    _importState.mapping=auto;_importState.step=2;setContent(buildImportHtml());
+    toast("Found "+rows.length+" rows. Map your columns below.");
+  };
+  reader.readAsText(file);
+}
+
+function goImportPreview(){
+  var mapping={};
+  document.querySelectorAll(".map-sel").forEach(function(sel){if(sel.value)mapping[sel.dataset.col]=sel.value;});
+  _importState.mapping=mapping;
+  if(!Object.values(mapping).includes("name")){toast("Must map the 'Name' column","err");return;}
+  _importState.step=3;setContent(buildImportHtml());
+}
+
+async function doImport(){
+  toast("Importing…");
+  var module=_importState.module;
+  var table=module==="library"?"library_members":"hostel_students";
+  var feeTable=module==="library"?"library_fees":"monthly_fees";
+  var idField=module==="library"?"member_id":"student_id";
+  var nameField=module==="library"?"member_name":"student_name";
+  var imported=0,skipped=0,m=S.curMonth,y=S.curYear;
+
+  for(var i=0;i<_importState.rows.length;i++){
+    var row=_importState.rows[i];var d={};
+    Object.keys(_importState.mapping).forEach(function(k){if(_importState.mapping[k]&&row[k])d[_importState.mapping[k]]=row[k];});
+    if(!d.name){skipped++;continue;}
+    var id=uid(module==="library"?"LM":"S");
+    var rec={id:id,name:d.name,phone:d.phone||"",email:d.email||"",course:d.course||"",dob:d.dob||null,joining_date:d.joining_date||null,monthly_fee_amount:Number(d.monthly_fee_amount)||0,fee_day:parseInt(d.fee_day)||1,discount:Number(d.discount)||0,notes:d.notes||""};
+    if(module==="hostel")rec.room=d.room||"";
+    else rec.seat_number=d.seat_number||"";
+    try{
+      await sb.from(table).insert(rec);
+      var net=Math.max(0,rec.monthly_fee_amount-rec.discount);
+      var fee={id:uid(module==="library"?"LF":"HF"),month:m,year:y,due_date:computeDueDate(rec,m,y),total_amount:rec.monthly_fee_amount,discount:rec.discount,net_amount:net,paid_amount:0,balance:net,status:"pending"};
+      fee[idField]=id;fee[nameField]=d.name;
+      await sb.from(feeTable).insert(fee);
+      imported++;
+    }catch(e){skipped++;}
+  }
+  toast("Imported "+imported+", skipped "+skipped,"ok");loadData();_importState.step=1;
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────
+function renderSettings(){
+  var cfg=S.settings||{};
+  setContent(
+    '<div style="max-width:600px">'
+    +'<div class="settings-card"><div class="settings-title">🏫 Institute Details</div>'
+    +'<div class="form-grid">'
+    +'<div class="fg"><label class="flbl">Institute Name</label><input class="finp" id="cfg-name" value="'+(cfg.inst_name||"")+'" placeholder="Coaching Institute"/></div>'
+    +'<div class="fg"><label class="flbl">Admin Email</label><input class="finp" id="cfg-email" type="email" value="'+(cfg.admin_email||"")+'"/></div>'
+    +'</div><button class="btn-primary" style="margin-top:10px" onclick="saveSettingsForm()">Save</button></div>'
+    +'<div class="settings-card"><div class="settings-title">📲 WhatsApp Template</div>'
+    +'<div class="settings-desc">Variables: {name} {net} {month} {year} {dueDate} {balance}</div>'
+    +'<textarea class="bc-area" id="cfg-wa" style="height:65px">'+(cfg.wa_template||"Dear {name}, your fee Rs.{net} for {month}/{year} is due on {dueDate}. Balance: Rs.{balance}.")+'</textarea>'
+    +'<button class="btn-primary" style="margin-top:7px" onclick="saveSettingsForm()">Save</button></div>'
+    +'<div class="settings-card"><div class="settings-title">🔄 Data</div>'
+    +'<button class="btn-primary" onclick="loadData()">↻ Refresh All Data</button></div>'
+    +'</div>'
+  );
+}
+async function saveSettingsForm(){
+  var waEl=document.getElementById("cfg-wa");
+  var upd={inst_name:v("cfg-name"),admin_email:v("cfg-email"),wa_template:waEl?waEl.value.trim():""};
+  await sb.from("app_settings").update(upd).eq("id",1);
+  S.settings=Object.assign(S.settings||{},upd);
+  toast("Settings saved ✓");
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
+window.onload = function(){
+  // Check if credentials are set
+  if(SUPABASE_URL==="YOUR_SUPABASE_URL"||SUPABASE_KEY==="YOUR_SUPABASE_ANON_KEY"){
+    setContent(
+      '<div class="loading-wrap" style="padding:30px;max-width:500px;margin:auto;text-align:left">'
+      +'<div style="font-size:32px;margin-bottom:12px">🔧</div>'
+      +'<div style="font-size:18px;font-weight:800;margin-bottom:8px">Setup Required</div>'
+      +'<p style="color:#64748b;font-size:14px;margin-bottom:16px">Open <strong>index.html</strong> in a text editor and replace these two values at the top of the script:</p>'
+      +'<div style="background:#1a2332;color:#a5f3fc;padding:14px;border-radius:8px;font-family:monospace;font-size:13px;margin-bottom:16px">'
+      +'var SUPABASE_URL = "<strong style=\'color:#fde68a\'>your-project-url</strong>";<br>'
+      +'var SUPABASE_KEY = "<strong style=\'color:#fde68a\'>your-anon-key</strong>";'
+      +'</div>'
+      +'<p style="color:#64748b;font-size:13px">Find these in your <a href="https://supabase.com/dashboard" target="_blank" style="color:#1565c0">Supabase Dashboard</a> → Project Settings → API</p>'
+      +'</div>'
+    );
+    return;
+  }
+
+  // Init Supabase
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Close modals on overlay click
+  document.querySelectorAll(".overlay").forEach(function(ov){
+    ov.addEventListener("click",function(e){if(e.target===ov){ov.classList.remove("open");ov.style.display="none";}});
+  });
+  document.addEventListener("click",function(e){
+    try{if(!e.target.closest(".notif-wrap"))document.getElementById("notif-panel").classList.remove("open");}catch(ex){}
+  });
+
+  loadData();
+};
+</script>
+</body>
+</html>
