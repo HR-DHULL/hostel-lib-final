@@ -3,24 +3,27 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Hostel & Library Management v5</title>
+  <title>Hostel & Library Management v6</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-/* ── RESET & BASE ── */
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:#f0f4f8;color:#1a2332;min-height:100vh;display:flex}
 a{text-decoration:none;color:inherit}
 input,select,textarea,button{font-family:inherit;font-size:14px}
 button{cursor:pointer;border:none;outline:none}
 
-/* ── LAYOUT ── */
-#app{display:flex;width:100%;min-height:100vh}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;width:100%;background:linear-gradient(135deg,#1a2332 0%,#1565c0 100%)}
+.login-box{background:#fff;border-radius:16px;padding:36px;width:360px;box-shadow:0 16px 48px rgba(0,0,0,.25)}
+.login-box h2{font-size:20px;font-weight:800;margin-bottom:6px;color:#1a2332}
+.login-box p{font-size:12px;color:#64748b;margin-bottom:20px}
+.login-box .fg{margin-bottom:14px}
+
+#app{display:none;width:100%;min-height:100vh}
 .sidebar{width:220px;min-height:100vh;background:#1a2332;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
 .main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
 .content{padding:20px;flex:1}
 
-/* ── SIDEBAR ── */
 .sidebar-brand{padding:20px 16px 14px;border-bottom:1px solid #2d3f55}
 .brand-label{font-size:9px;letter-spacing:2px;color:#4a6080;font-weight:700;text-transform:uppercase}
 .brand-name{font-size:15px;font-weight:800;color:#fff;margin:3px 0 6px;line-height:1.2}
@@ -32,11 +35,14 @@ button{cursor:pointer;border:none;outline:none}
 .nav-item:hover{background:#253045;color:#cdd8e3}
 .nav-item.active{background:#1565c0;color:#fff;font-weight:600}
 .nav-item.lib-active{background:#2e7d32;color:#fff;font-weight:600}
+.nav-item.mess-active{background:#e65100;color:#fff;font-weight:600}
+.nav-item.hidden{display:none}
 .sidebar-footer{margin-top:auto;padding:14px 16px;border-top:1px solid #2d3f55}
 .sheet-link{font-size:11px;color:#4a6080;display:block;text-align:center;padding:6px;border-radius:5px;background:#253045;transition:color .15s}
 .sheet-link:hover{color:#cdd8e3}
+.user-info{font-size:11px;color:#8899aa;text-align:center;padding:8px 16px;cursor:pointer}
+.user-info:hover{color:#fff}
 
-/* ── TOPBAR ── */
 .topbar{background:#fff;border-bottom:1px solid #e2e8f0;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .topbar-title{font-size:17px;font-weight:800;color:#1a2332}
 .topbar-right{display:flex;align-items:center;gap:10px}
@@ -46,20 +52,18 @@ button{cursor:pointer;border:none;outline:none}
 .btn-primary{background:#1565c0;color:#fff;padding:8px 16px;border-radius:8px;font-weight:600;font-size:13px;transition:background .15s}
 .btn-primary:hover{background:#1976d2}
 .btn-primary.lib{background:#2e7d32}.btn-primary.lib:hover{background:#388e3c}
+.btn-primary.mess{background:#e65100}.btn-primary.mess:hover{background:#ef6c00}
 
-/* ── NOTIFICATIONS ── */
 .notif-wrap{position:relative}
 .notif-panel{position:absolute;right:0;top:calc(100% + 8px);width:320px;background:#fff;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);border:1px solid #e2e8f0;display:none;z-index:200}
 .notif-panel.open{display:block}
 .notif-hdr{padding:12px 14px;font-weight:700;font-size:13px;border-bottom:1px solid #f1f5f9}
 .notif-item{padding:9px 14px;font-size:12px;display:flex;align-items:flex-start;gap:7px;border-bottom:1px solid #f8fafc}
 
-/* ── CARDS ── */
 .card{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
 .card-title{font-size:14px;font-weight:700;color:#1a2332;margin-bottom:10px}
 
-/* ── STATS ── */
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
 .stat-card{background:#fff;border-radius:12px;padding:16px;border-left:4px solid #1565c0;box-shadow:0 1px 4px rgba(0,0,0,.07)}
@@ -68,15 +72,15 @@ button{cursor:pointer;border:none;outline:none}
 .stat-val{font-size:26px;font-weight:800;line-height:1}
 .stat-sub{font-size:11px;color:#94a3b8;margin-top:5px}
 
-/* ── GRID LAYOUTS ── */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-@media(max-width:768px){.g2{grid-template-columns:1fr}}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:768px){.g2,.g3{grid-template-columns:1fr}}
 
-/* ── STUDENT CARDS ── */
 .s-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
 .s-card{background:#fff;border-radius:11px;padding:14px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:box-shadow .15s,transform .1s;border:2px solid transparent}
 .s-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.12);transform:translateY(-1px);border-color:#1565c0}
 .s-card.lib:hover{border-color:#2e7d32}
+.s-card.mess:hover{border-color:#e65100}
 .s-card-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .s-card-name{font-size:14px;font-weight:700;color:#1a2332}
 .s-card-sub{font-size:11px;color:#64748b;margin-top:2px}
@@ -84,17 +88,23 @@ button{cursor:pointer;border:none;outline:none}
 .s-card-meta{font-size:11px;color:#94a3b8}
 .av{border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;flex-shrink:0}
 
-/* ── CHIPS ── */
 .chip{font-size:10px;font-weight:700;padding:3px 8px;border-radius:12px;display:inline-flex;align-items:center;gap:3px}
 .chip-paid{background:#e8f5e9;color:#2e7d32}
 .chip-partial{background:#fff3e0;color:#e65100}
 .chip-pending{background:#fffde7;color:#f57f17}
 .chip-overdue{background:#fce4ec;color:#c62828}
 .chip-exited{background:#f1f5f9;color:#64748b}
+.chip-open{background:#e3f2fd;color:#1565c0}
+.chip-inprogress{background:#fff3e0;color:#e65100}
+.chip-resolved{background:#e8f5e9;color:#2e7d32}
+.chip-high{background:#fce4ec;color:#c62828}
+.chip-medium{background:#fff3e0;color:#e65100}
+.chip-low{background:#e8f5e9;color:#2e7d32}
 .lib-badge{background:#e8f5e9;color:#2e7d32;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;display:inline-block}
+.mess-badge{background:#fff3e0;color:#e65100;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;display:inline-block}
+.hostel-badge{background:#e3f2fd;color:#1565c0;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;display:inline-block}
 .bal-badge{background:#fce4ec;color:#c62828;font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
 
-/* ── BUTTONS ── */
 .btn-sm{padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .12s}
 .btn-blue{background:#e3f2fd;color:#1565c0}.btn-blue:hover{background:#bbdefb}
 .btn-green{background:#e8f5e9;color:#2e7d32}.btn-green:hover{background:#c8e6c9}
@@ -104,11 +114,11 @@ button{cursor:pointer;border:none;outline:none}
 .btn-gray{background:#f1f5f9;color:#475569}.btn-gray:hover{background:#e2e8f0}
 .btn-pay{background:#1565c0;color:#fff}.btn-pay:hover{background:#1976d2}
 .btn-pay.lib{background:#2e7d32}.btn-pay.lib:hover{background:#388e3c}
+.btn-pay.mess{background:#e65100}.btn-pay.mess:hover{background:#ef6c00}
 .btn-outline{background:none;border:1px solid #e2e8f0;color:#475569;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600}
 .btn-outline:hover{background:#f1f5f9}
 .back-btn{background:none;color:#1565c0;font-size:13px;font-weight:600;padding:0 0 14px;display:inline-block;cursor:pointer;border:none}
 
-/* ── FORMS ── */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:600px){.form-grid{grid-template-columns:1fr}}
 .fg{display:flex;flex-direction:column;gap:4px}
@@ -119,7 +129,6 @@ button{cursor:pointer;border:none;outline:none}
 .hint{font-size:10px;color:#94a3b8;margin-top:2px}
 select.finp{background:#fff}
 
-/* ── SEARCH ── */
 .search-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .search-inp{padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;flex:1;min-width:200px}
 .search-inp:focus{border-color:#1565c0;outline:none}
@@ -129,7 +138,6 @@ select.finp{background:#fff}
 .ftag.active{background:#1565c0;color:#fff}
 .result-count{font-size:12px;color:#94a3b8;margin-bottom:8px}
 
-/* ── FEE COLS ── */
 .fee-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 @media(max-width:900px){.fee-cols{grid-template-columns:1fr}}
 .fee-col{background:#fff;border-radius:10px;padding:12px;border-top:3px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06)}
@@ -137,7 +145,6 @@ select.finp{background:#fff}
 .bulk-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f8fafc;flex-wrap:wrap}
 .bulk-row:last-child{border-bottom:none}
 
-/* ── PROFILE ── */
 .profile-top{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
 .profile-name{font-size:18px;font-weight:800;color:#1a2332}
 .profile-sub{font-size:13px;color:#64748b;margin-top:3px}
@@ -147,18 +154,12 @@ select.finp{background:#fff}
 .f-lbl{color:#64748b;font-weight:500}
 .f-val{font-weight:600;color:#1a2332;text-align:right;max-width:60%}
 
-/* ── LEAVE ── */
 .leave-cur{display:flex;align-items:center;justify-content:space-between;background:#fffde7;border-radius:8px;padding:10px 12px;margin-bottom:8px;gap:10px;flex-wrap:wrap}
-
-/* ── FEE HISTORY ── */
 .fh-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f8fafc;flex-wrap:wrap}
 .fh-row:last-child{border-bottom:none}
-
-/* ── PROGRESS ── */
 .prog-track{height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden}
 .prog-fill{height:100%;border-radius:3px;transition:width .3s}
 
-/* ── MODALS ── */
 .overlay{position:fixed;inset:0;background:rgba(15,20,30,.55);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
 .overlay.open{display:flex}
 .modal{background:#fff;border-radius:14px;padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.2)}
@@ -169,16 +170,13 @@ select.finp{background:#fff}
 .modal-close:hover{color:#1a2332}
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
-/* ── BROADCAST ── */
 .bc-area{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;resize:vertical;font-size:13px;min-height:100px}
 .bc-area:focus{border-color:#1565c0;outline:none}
 
-/* ── SETTINGS ── */
 .settings-card{background:#fff;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .settings-title{font-size:14px;font-weight:700;margin-bottom:10px;color:#1a2332}
 .settings-desc{font-size:12px;color:#64748b;margin-bottom:10px}
 
-/* ── IMPORT ── */
 .import-step{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .import-hdr{font-size:15px;font-weight:700;margin-bottom:6px}
 .map-sel{padding:5px 8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px}
@@ -186,56 +184,94 @@ select.finp{background:#fff}
 .import-table th,.import-table td{padding:7px 10px;border-bottom:1px solid #f1f5f9;text-align:left}
 .import-table th{background:#f8fafc;font-weight:700;color:#475569}
 
-/* ── RECIPIENT ROW ── */
 .recipient-row{display:grid;grid-template-columns:1fr 1fr 80px;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid #f8fafc}
 
-/* ── LOADING ── */
 .loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:12px}
 .spinner{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#1565c0;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{font-size:13px;color:#94a3b8;font-weight:500}
 .empty{color:#94a3b8;font-size:13px;text-align:center;padding:20px 0}
 
-/* ── TOAST ── */
 .toast{position:fixed;bottom:24px;right:24px;background:#1a2332;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .25s;z-index:9999;max-width:320px}
-.toast.show{opacity:1}
-.toast.ok{background:#2e7d32}
-.toast.err{background:#c62828}
-.toast.lib{background:#2e7d32}
+.toast.show{opacity:1}.toast.ok{background:#2e7d32}.toast.err{background:#c62828}.toast.lib{background:#2e7d32}.toast.mess{background:#e65100}
 
-/* ── MISC ── */
 .wa-link-btn{display:block;background:#25d366;color:#fff;text-align:center;padding:10px;border-radius:8px;font-weight:700;font-size:14px;margin-top:10px}
-#id-card-frame{width:100%;min-height:300px;border:none;border-radius:8px}
+
+.room-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px}
+.room-cell{text-align:center;padding:10px 6px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;transition:all .12s}
+.room-cell.vacant{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9}
+.room-cell.occupied{background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb}
+.room-cell.onleave{background:#fffde7;color:#f57f17;border:1px solid #fff9c4}
+.room-cell:hover{transform:scale(1.05);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+
+.ticket-row{background:#fff;border-radius:10px;padding:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;align-items:center;gap:12px;flex-wrap:wrap;cursor:pointer;transition:box-shadow .12s}
+.ticket-row:hover{box-shadow:0 3px 12px rgba(0,0,0,.1)}
+
+.expense-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
+.expense-row:last-child{border-bottom:none}
   </style>
 </head>
 <body>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="login-screen">
+  <div class="login-box">
+    <h2>🏠 Management System</h2>
+    <p>Sign in to continue</p>
+    <div class="fg" style="margin-bottom:14px">
+      <label class="flbl">Username</label>
+      <input class="finp" id="login-user" placeholder="admin" autofocus/>
+    </div>
+    <div class="fg" style="margin-bottom:18px">
+      <label class="flbl">Password</label>
+      <input class="finp" id="login-pass" type="password" placeholder="••••••••"/>
+    </div>
+    <button class="btn-primary" style="width:100%;padding:12px" id="btn-login" onclick="doLogin()">Sign In</button>
+    <div id="login-err" style="color:#c62828;font-size:12px;margin-top:10px;text-align:center"></div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
 <div id="app">
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <div class="brand-label">COACHING INSTITUTE</div>
-      <div class="brand-name">Management System <span class="v-badge">v5</span></div>
+      <div class="brand-label" id="brand-label">COACHING INSTITUTE</div>
+      <div class="brand-name">Management System <span class="v-badge">v6</span></div>
       <div class="brand-status"><span class="dot-green"></span> Supabase Live</div>
     </div>
     <div class="sidebar-section-label">HOSTEL</div>
     <nav>
-      <div class="nav-item active" id="nav-dashboard"   onclick="go('dashboard')">  <span>⊞</span>  Dashboard     </div>
-      <div class="nav-item"       id="nav-students"     onclick="go('students')">   <span>👤</span>  Students      </div>
-      <div class="nav-item"       id="nav-fees"         onclick="go('fees')">       <span>₹</span>   Monthly Fees  </div>
-      <div class="nav-item"       id="nav-leave"        onclick="go('leave')">      <span>📋</span>  Leave Tracker </div>
+      <div class="nav-item active" id="nav-dashboard"   onclick="go('dashboard')"><span>⊞</span> Dashboard</div>
+      <div class="nav-item" id="nav-students"    onclick="go('students')"><span>👤</span> Students</div>
+      <div class="nav-item" id="nav-fees"        onclick="go('fees')"><span>₹</span> Monthly Fees</div>
+      <div class="nav-item" id="nav-leave"       onclick="go('leave')"><span>📋</span> Leave Tracker</div>
+      <div class="nav-item" id="nav-occupancy"   onclick="go('occupancy')"><span>🏢</span> Occupancy</div>
     </nav>
     <div class="sidebar-section-label" style="margin-top:8px">LIBRARY</div>
     <nav>
-      <div class="nav-item" id="nav-library"      onclick="go('library')">      <span>📚</span> Members      </div>
-      <div class="nav-item" id="nav-library-fees" onclick="go('library-fees')"> <span>₹</span>  Monthly Fees  </div>
+      <div class="nav-item" id="nav-library"      onclick="go('library')"><span>📚</span> Members</div>
+      <div class="nav-item" id="nav-library-fees" onclick="go('library-fees')"><span>₹</span> Monthly Fees</div>
+    </nav>
+    <div class="sidebar-section-label" style="margin-top:8px">MESS</div>
+    <nav>
+      <div class="nav-item" id="nav-mess"         onclick="go('mess')"><span>🍽️</span> Members</div>
+      <div class="nav-item" id="nav-mess-fees"    onclick="go('mess-fees')"><span>₹</span> Mess Fees</div>
+      <div class="nav-item" id="nav-mess-att"     onclick="go('mess-att')"><span>📊</span> Attendance</div>
+    </nav>
+    <div class="sidebar-section-label" style="margin-top:8px">MANAGEMENT</div>
+    <nav>
+      <div class="nav-item" id="nav-complaints"  onclick="go('complaints')"><span>🎫</span> Complaints</div>
+      <div class="nav-item" id="nav-expenses"    onclick="go('expenses')"><span>💸</span> Expenses</div>
     </nav>
     <div class="sidebar-section-label" style="margin-top:8px">TOOLS</div>
     <nav>
-      <div class="nav-item" id="nav-broadcast" onclick="go('broadcast')"><span>📣</span> Broadcast     </div>
-      <div class="nav-item" id="nav-import"    onclick="go('import')">   <span>📥</span> Import Data    </div>
-      <div class="nav-item" id="nav-settings"  onclick="go('settings')">&nbsp;<span>⚙️</span> Settings  </div>
+      <div class="nav-item" id="nav-broadcast" onclick="go('broadcast')"><span>📣</span> Broadcast</div>
+      <div class="nav-item" id="nav-import"    onclick="go('import')"><span>📥</span> Import Data</div>
+      <div class="nav-item" id="nav-settings"  onclick="go('settings')">&nbsp;<span>⚙️</span> Settings</div>
     </nav>
     <div class="sidebar-footer">
-      <a href="https://supabase.com" target="_blank" class="sheet-link">📊 Open Supabase Dashboard</a>
+      <div class="user-info" id="user-info" onclick="doLogout()">👤 Admin · Logout</div>
+      <a href="https://supabase.com" target="_blank" class="sheet-link">📊 Open Supabase</a>
     </div>
   </aside>
 
@@ -250,7 +286,7 @@ select.finp{background:#fff}
             <div id="notif-list" style="max-height:300px;overflow-y:auto"></div>
           </div>
         </div>
-        <button class="btn-primary" id="topbar-add-btn" onclick="handleTopbarAdd()">+ Add Student</button>
+        <button class="btn-primary" id="topbar-add-btn" onclick="handleTopbarAdd()" style="display:none">+ Add</button>
       </div>
     </div>
     <div class="content" id="content">
@@ -259,13 +295,14 @@ select.finp{background:#fff}
   </div>
 </div>
 
-<!-- ══ MODALS ══════════════════════════════════════════════════ -->
+<!-- ══ MODALS ══ -->
 <!-- Add Student -->
 <div class="overlay" id="m-add-student">
   <div class="modal">
     <div class="modal-hdr"><div><div class="modal-title">👤 Add Hostel Student</div></div><button class="modal-close" onclick="closeM('m-add-student')">✕</button></div>
     <div class="form-grid">
       <div class="fg full"><label class="flbl">Full Name *</label><input class="finp" id="as-name" placeholder="Student name"/></div>
+      <div class="fg"><label class="flbl">Hostel</label><select class="finp" id="as-hostel"></select></div>
       <div class="fg"><label class="flbl">Room Number</label><input class="finp" id="as-room" placeholder="e.g. A-101"/></div>
       <div class="fg"><label class="flbl">Course</label><input class="finp" id="as-course" placeholder="e.g. B.Tech"/></div>
       <div class="fg"><label class="flbl">Phone</label><input class="finp" id="as-phone" placeholder="10-digit number"/></div>
@@ -292,6 +329,7 @@ select.finp{background:#fff}
     <input type="hidden" id="edit-s-id"/>
     <div class="form-grid">
       <div class="fg full"><label class="flbl">Full Name *</label><input class="finp" id="es-name"/></div>
+      <div class="fg"><label class="flbl">Hostel</label><select class="finp" id="es-hostel"></select></div>
       <div class="fg"><label class="flbl">Room</label><input class="finp" id="es-room"/></div>
       <div class="fg"><label class="flbl">Course</label><input class="finp" id="es-course"/></div>
       <div class="fg"><label class="flbl">Phone</label><input class="finp" id="es-phone"/></div>
@@ -364,6 +402,29 @@ select.finp{background:#fff}
   </div>
 </div>
 
+<!-- Add Mess Member -->
+<div class="overlay" id="m-add-mess">
+  <div class="modal">
+    <div class="modal-hdr"><div><div class="modal-title">🍽️ Add Mess Member</div></div><button class="modal-close" onclick="closeM('m-add-mess')">✕</button></div>
+    <div class="form-grid">
+      <div class="fg full"><label class="flbl">Full Name *</label><input class="finp" id="am-name" placeholder="Member name"/></div>
+      <div class="fg"><label class="flbl">Meal Plan</label><select class="finp" id="am-plan"><option value="veg">🥦 Veg</option><option value="nonveg">🍗 Non-Veg</option><option value="both">🍽️ Both</option></select></div>
+      <div class="fg"><label class="flbl">Link to Hostel Student</label><select class="finp" id="am-link"><option value="">— None —</option></select></div>
+      <div class="fg"><label class="flbl">Phone</label><input class="finp" id="am-phone"/></div>
+      <div class="fg"><label class="flbl">Email</label><input class="finp" id="am-email" type="email"/></div>
+      <div class="fg"><label class="flbl">Joining Date *</label><input class="finp" id="am-join" type="date"/></div>
+      <div class="fg"><label class="flbl">Monthly Fee (₹) *</label><input class="finp" id="am-fee" type="number" placeholder="e.g. 3000"/></div>
+      <div class="fg"><label class="flbl">Fee Day</label><input class="finp" id="am-feeday" type="number" min="1" max="28" placeholder="1"/></div>
+      <div class="fg"><label class="flbl">Discount (₹)</label><input class="finp" id="am-discount" type="number" placeholder="0"/></div>
+      <div class="fg full"><label class="flbl">Notes</label><input class="finp" id="am-notes"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-add-mess')">Cancel</button>
+      <button class="btn-primary mess" id="btn-add-mess" onclick="submitAddMessMember()">Add Member</button>
+    </div>
+  </div>
+</div>
+
 <!-- Pay Modal -->
 <div class="overlay" id="m-pay">
   <div class="modal" style="max-width:420px">
@@ -371,11 +432,9 @@ select.finp{background:#fff}
     <input type="hidden" id="pay-fee-id"/><input type="hidden" id="pay-module"/><input type="hidden" id="pay-student-id"/>
     <div id="pay-summary" style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
     <div class="form-grid">
-      <div class="fg full"><label class="flbl">Amount (₹) *</label><input class="finp" id="pay-amount" type="number" placeholder="Enter amount"/></div>
-      <div class="fg"><label class="flbl">Mode</label>
-        <select class="finp" id="pay-mode"><option value="">Select mode</option><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option><option>Advance</option></select>
-      </div>
-      <div class="fg"><label class="flbl">Note</label><input class="finp" id="pay-note" placeholder="Optional note"/></div>
+      <div class="fg"><label class="flbl">Amount (₹) *</label><input class="finp" id="pay-amount" type="number" placeholder="Amount"/></div>
+      <div class="fg"><label class="flbl">Mode</label><select class="finp" id="pay-mode"><option value="">—</option><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option><option value="bank">Bank Transfer</option></select></div>
+      <div class="fg full"><label class="flbl">Note</label><input class="finp" id="pay-note" placeholder="Optional note"/></div>
     </div>
     <div class="modal-footer">
       <button class="btn-sm btn-gray" onclick="closeM('m-pay')">Cancel</button>
@@ -397,6 +456,46 @@ select.finp{background:#fff}
     <div class="modal-footer">
       <button class="btn-sm btn-gray" onclick="closeM('m-leave')">Cancel</button>
       <button class="btn-primary" onclick="submitLeave()">Grant Leave</button>
+    </div>
+  </div>
+</div>
+
+<!-- Complaint Modal -->
+<div class="overlay" id="m-complaint">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">🎫 New Complaint</div><button class="modal-close" onclick="closeM('m-complaint')">✕</button></div>
+    <div class="form-grid">
+      <div class="fg"><label class="flbl">Student</label><select class="finp" id="comp-student"><option value="">— External —</option></select></div>
+      <div class="fg"><label class="flbl">Hostel</label><select class="finp" id="comp-hostel"></select></div>
+      <div class="fg"><label class="flbl">Room</label><input class="finp" id="comp-room" placeholder="e.g. A-101"/></div>
+      <div class="fg"><label class="flbl">Category</label><select class="finp" id="comp-cat"><option value="plumbing">🔧 Plumbing</option><option value="electrical">💡 Electrical</option><option value="furniture">🪑 Furniture</option><option value="cleaning">🧹 Cleaning</option><option value="internet">🌐 Internet</option><option value="general">📋 General</option></select></div>
+      <div class="fg full"><label class="flbl">Subject *</label><input class="finp" id="comp-subject" placeholder="Brief description"/></div>
+      <div class="fg full"><label class="flbl">Details</label><textarea class="bc-area" id="comp-desc" style="height:60px" placeholder="Full description…"></textarea></div>
+      <div class="fg"><label class="flbl">Priority</label><select class="finp" id="comp-priority"><option value="low">🟢 Low</option><option value="medium" selected>🟡 Medium</option><option value="high">🔴 High</option></select></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-complaint')">Cancel</button>
+      <button class="btn-primary" onclick="submitComplaint()">Submit Complaint</button>
+    </div>
+  </div>
+</div>
+
+<!-- Expense Modal -->
+<div class="overlay" id="m-expense">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr"><div class="modal-title">💸 Add Expense</div><button class="modal-close" onclick="closeM('m-expense')">✕</button></div>
+    <div class="form-grid">
+      <div class="fg"><label class="flbl">Date *</label><input class="finp" id="exp-date" type="date"/></div>
+      <div class="fg"><label class="flbl">Amount (₹) *</label><input class="finp" id="exp-amount" type="number" placeholder="Amount"/></div>
+      <div class="fg"><label class="flbl">Category</label><select class="finp" id="exp-cat"></select></div>
+      <div class="fg"><label class="flbl">Hostel</label><select class="finp" id="exp-hostel"><option value="">— General —</option></select></div>
+      <div class="fg full"><label class="flbl">Description *</label><input class="finp" id="exp-desc" placeholder="What was this expense for?"/></div>
+      <div class="fg"><label class="flbl">Paid To</label><input class="finp" id="exp-to" placeholder="Vendor / person"/></div>
+      <div class="fg"><label class="flbl">Mode</label><select class="finp" id="exp-mode"><option value="cash">Cash</option><option value="upi">UPI</option><option value="bank">Bank Transfer</option><option value="card">Card</option></select></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-expense')">Cancel</button>
+      <button class="btn-primary" onclick="submitExpense()">Add Expense</button>
     </div>
   </div>
 </div>
@@ -446,7 +545,7 @@ select.finp{background:#fff}
   <div class="modal" style="max-width:460px">
     <div class="modal-hdr"><div class="modal-title">📧 Send Fee Reminders</div><button class="modal-close" onclick="closeM('m-confirm-reminder')">✕</button></div>
     <input type="hidden" id="remind-module"/>
-    <p style="font-size:13px;margin-bottom:8px">Will send email reminders to <strong id="remind-count">…</strong> students with pending/overdue fees.</p>
+    <p style="font-size:13px;margin-bottom:8px">Will send reminders to <strong id="remind-count">…</strong> students with pending/overdue fees.</p>
     <div id="remind-recipients" style="max-height:180px;overflow-y:auto;margin:10px 0;font-size:12px"></div>
     <div class="modal-footer">
       <button class="btn-sm btn-gray" onclick="closeM('m-confirm-reminder')">Cancel</button>
@@ -467,24 +566,44 @@ select.finp{background:#fff}
   </div>
 </div>
 
+<!-- Manage Users Modal -->
+<div class="overlay" id="m-users">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr"><div class="modal-title">👥 Manage Users</div><button class="modal-close" onclick="closeM('m-users')">✕</button></div>
+    <div id="users-list" style="max-height:250px;overflow-y:auto;margin-bottom:14px"></div>
+    <div class="form-grid" style="border-top:1px solid #e2e8f0;padding-top:14px">
+      <div class="fg"><label class="flbl">Username *</label><input class="finp" id="nu-user" placeholder="username"/></div>
+      <div class="fg"><label class="flbl">Password *</label><input class="finp" id="nu-pass" placeholder="password"/></div>
+      <div class="fg"><label class="flbl">Display Name</label><input class="finp" id="nu-name" placeholder="Full name"/></div>
+      <div class="fg"><label class="flbl">Role</label><select class="finp" id="nu-role"><option value="admin">Admin</option><option value="manager">Manager</option><option value="team">Team Member</option></select></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-gray" onclick="closeM('m-users')">Close</button>
+      <button class="btn-primary" onclick="addUser()">+ Add User</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 // ══════════════════════════════════════════════════════════════
-//  CONFIGURATION — REPLACE WITH YOUR SUPABASE CREDENTIALS
+//  CONFIGURATION
 // ══════════════════════════════════════════════════════════════
-var SUPABASE_URL = "https://jtthmxjozbylluscfybt.supabase.co";       // e.g. https://abcxyz.supabase.co
-var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0dGhteGpvemJ5bGx1c2NmeWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDA3MTcsImV4cCI6MjA4ODg3NjcxN30.Zoc_wKtsBbQ1u3T-8o8Z08I5F4KylME8QLAdf0gNzJ8";  // from Project Settings → API
+var SUPABASE_URL = "YOUR_SUPABASE_URL";
+var SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
 
-var sb; // supabase client
+var sb;
+var CUR_USER = null; // {id, username, role, display_name}
 
 // ══════════════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════════════
 var S = {
   tab:"dashboard", selected:null,
-  students:[], leaves:[], libMembers:[],
-  monthSummary:{hostel:[],library:[]},
+  students:[], leaves:[], libMembers:[], messMembers:[], complaints:[], expenses:[],
+  hostels:[], rooms:[],
+  monthSummary:{hostel:[],library:[],mess:[]},
   curMonth:new Date().getMonth()+1,
   curYear:new Date().getFullYear(),
   settings:{},
@@ -492,11 +611,30 @@ var S = {
 };
 
 var MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
-var TAB_LABELS={dashboard:"Dashboard",students:"Students",fees:"Hostel Monthly Fees",leave:"Leave Tracker",library:"Library Members","library-fees":"Library Monthly Fees",broadcast:"Broadcast Notice",import:"Import Data",settings:"Settings"};
-var TOPBAR_LABEL={dashboard:null,students:"+ Add Student",fees:null,leave:null,library:"+ Add Member","library-fees":null,broadcast:null,import:null,settings:null};
+var TAB_LABELS={dashboard:"Dashboard",students:"Students",fees:"Hostel Monthly Fees",leave:"Leave Tracker",occupancy:"Occupancy Dashboard",library:"Library Members","library-fees":"Library Monthly Fees",mess:"Mess Members","mess-fees":"Mess Monthly Fees","mess-att":"Mess Attendance",complaints:"Complaints & Tickets",expenses:"Expense Tracker",broadcast:"Broadcast Notice",import:"Import Data",settings:"Settings"};
+var TOPBAR_LABEL={students:"+ Add Student",library:"+ Add Member",mess:"+ Add Mess Member",complaints:"+ New Complaint",expenses:"+ Add Expense"};
 
-// ── HELPERS ───────────────────────────────────────────────────
-function uid(p){return (p||"X")+Date.now()+Math.floor(Math.random()*9999);}
+// ═══ ROLE ACCESS ═══
+function canAccess(tab){
+  if(!CUR_USER) return false;
+  if(CUR_USER.role==="admin") return true;
+  if(CUR_USER.role==="manager"){
+    if(tab==="settings") return false;
+    return true;
+  }
+  // team role
+  var allowed=["dashboard","students","library","mess"];
+  return allowed.indexOf(tab)!==-1;
+}
+function canEdit(){
+  return CUR_USER && (CUR_USER.role==="admin"||CUR_USER.role==="manager");
+}
+function isAdmin(){
+  return CUR_USER && CUR_USER.role==="admin";
+}
+
+// ═══ HELPERS ═══
+function uid(p){return(p||"X")+Date.now()+Math.floor(Math.random()*9999);}
 function today(){return new Date().toISOString().slice(0,10);}
 function pad2(n){return String(n).padStart(2,"0");}
 function computeDueDate(item,month,year){
@@ -526,10 +664,15 @@ function fmtDate(d){if(!d)return"—";var dt=new Date(d+"T00:00:00");return isNa
 function daysAgo(d){if(!d)return null;return Math.ceil((new Date(d)-new Date())/86400000);}
 
 function chip(status){
-  var map={paid:"chip-paid ✓ Paid",partial:"chip-partial ⚡ Partial",pending:"chip-pending ⏳ Pending",overdue:"chip-overdue 🔴 Overdue"};
+  var map={paid:"chip-paid ✓ Paid",partial:"chip-partial ⚡ Partial",pending:"chip-pending ⏳ Pending",overdue:"chip-overdue 🔴 Overdue",open:"chip-open 📋 Open",inprogress:"chip-inprogress ⚡ In Progress",resolved:"chip-resolved ✓ Resolved"};
   var val=map[status]||"chip-pending "+status;
   var parts=val.split(" ");var cls=parts[0];var label=parts.slice(1).join(" ");
   return'<span class="chip '+cls+'">'+label+'</span>';
+}
+function priorityChip(p){
+  var map={high:"chip-high 🔴 High",medium:"chip-medium 🟡 Medium",low:"chip-low 🟢 Low"};
+  var val=map[p]||"chip-medium "+p;
+  var parts=val.split(" ");return'<span class="chip '+parts[0]+'">'+parts.slice(1).join(" ")+'</span>';
 }
 function av(name,size,bg){
   var initials=(name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
@@ -548,31 +691,121 @@ function frow(label,val){return'<div class="f-row"><span class="f-lbl">'+label+'
 function dueDayLabel(item){
   if(item.override_due_date)return"Day "+item.override_due_date+" (override)";
   if(item.fee_day)return"Day "+item.fee_day;
-  if(item.joining_date){var d=new Date(item.joining_date);if(!isNaN(d))return"Day "+d.getDate()+" (joining day)";}
   return"—";
 }
 
-// ── NAV ───────────────────────────────────────────────────────
+function getHostelNames(){
+  try{return JSON.parse(S.settings.hostel_names||"[]");}catch(e){return[];}
+}
+function getExpenseCategories(){
+  try{return JSON.parse(S.settings.expense_categories||'[]');}catch(e){return["Maintenance","Utilities","Mess Supplies","Miscellaneous"];}
+}
+function populateHostelSelect(selId, includeAll){
+  var el=document.getElementById(selId);if(!el)return;
+  var names=getHostelNames();
+  el.innerHTML=(includeAll?'<option value="">— All Hostels —</option>':'<option value="">— Select Hostel —</option>')+names.map(function(n){return'<option value="'+n+'">'+n+'</option>';}).join("");
+}
+
+// ═══ LOGIN ═══
+async function doLogin(){
+  var user=v("login-user"),pass=v("login-pass");
+  if(!user||!pass){document.getElementById("login-err").textContent="Enter username and password";return;}
+  var btn=document.getElementById("btn-login");btn.disabled=true;btn.textContent="Signing in…";
+  try{
+    var res=await sb.from("app_users").select("*").eq("username",user).eq("is_active",true).maybeSingle();
+    if(!res.data||res.data.password_hash!==pass){
+      document.getElementById("login-err").textContent="Invalid username or password";
+      btn.disabled=false;btn.textContent="Sign In";return;
+    }
+    CUR_USER=res.data;
+    sessionStorage.setItem("cur_user",JSON.stringify(CUR_USER));
+    showApp();
+  }catch(e){
+    document.getElementById("login-err").textContent=e.message;
+    btn.disabled=false;btn.textContent="Sign In";
+  }
+}
+function doLogout(){
+  CUR_USER=null;sessionStorage.removeItem("cur_user");
+  document.getElementById("app").style.display="none";
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("login-pass").value="";
+  document.getElementById("login-err").textContent="";
+}
+
+function showApp(){
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("app").style.display="flex";
+  document.getElementById("user-info").innerHTML="👤 "+CUR_USER.display_name+" ("+CUR_USER.role+") · <u>Logout</u>";
+  applyRoleRestrictions();
+  loadData();
+}
+
+function applyRoleRestrictions(){
+  // Hide nav items based on role
+  var allNavs=document.querySelectorAll(".nav-item");
+  allNavs.forEach(function(el){
+    var tabId=el.id.replace("nav-","");
+    if(!canAccess(tabId)){el.classList.add("hidden");}
+    else{el.classList.remove("hidden");}
+  });
+}
+
+// ═══ NAV ═══
 function go(tab){
+  if(!canAccess(tab)){toast("You don't have access to this section","err");return;}
   S.tab=tab;S.selected=null;
-  document.querySelectorAll(".nav-item").forEach(function(el){el.classList.remove("active","lib-active");});
+  document.querySelectorAll(".nav-item").forEach(function(el){el.classList.remove("active","lib-active","mess-active");});
   var navEl=document.getElementById("nav-"+tab);
-  if(navEl){var isLib=(tab==="library"||tab==="library-fees");navEl.classList.add(isLib?"lib-active":"active");}
+  if(navEl){
+    var isLib=(tab==="library"||tab==="library-fees");
+    var isMess=(tab==="mess"||tab==="mess-fees"||tab==="mess-att");
+    navEl.classList.add(isLib?"lib-active":isMess?"mess-active":"active");
+  }
   document.getElementById("topbar-title").textContent=TAB_LABELS[tab]||tab;
   var addBtn=document.getElementById("topbar-add-btn");
-  if(TOPBAR_LABEL[tab]){addBtn.style.display="block";addBtn.textContent=TOPBAR_LABEL[tab];}
+  if(TOPBAR_LABEL[tab]&&canEdit()){addBtn.style.display="block";addBtn.textContent=TOPBAR_LABEL[tab];}
   else addBtn.style.display="none";
   renderTab();
 }
-function handleTopbarAdd(){if(S.tab==="students")openM("m-add-student");else if(S.tab==="library")openM("m-add-lib");}
+function handleTopbarAdd(){
+  if(S.tab==="students"){populateHostelSelect("as-hostel");openM("m-add-student");}
+  else if(S.tab==="library")openM("m-add-lib");
+  else if(S.tab==="mess"){populateMessLink();openM("m-add-mess");}
+  else if(S.tab==="complaints"){populateComplaintForm();openM("m-complaint");}
+  else if(S.tab==="expenses"){populateExpenseForm();openM("m-expense");}
+}
+function populateMessLink(){
+  var sel=document.getElementById("am-link");
+  sel.innerHTML='<option value="">— None (External) —</option>'+S.students.filter(function(s){return !s.exit_date;}).map(function(s){return'<option value="'+s.id+'">'+s.name+(s.room?" ("+s.room+")":"")+'</option>';}).join("");
+}
+function populateComplaintForm(){
+  populateHostelSelect("comp-hostel",false);
+  var sel=document.getElementById("comp-student");
+  sel.innerHTML='<option value="">— External —</option>'+S.students.filter(function(s){return !s.exit_date;}).map(function(s){return'<option value="'+s.id+'">'+s.name+'</option>';}).join("");
+}
+function populateExpenseForm(){
+  populateHostelSelect("exp-hostel",false);
+  setV("exp-date",today());
+  var cats=getExpenseCategories();
+  var sel=document.getElementById("exp-cat");
+  sel.innerHTML=cats.map(function(c){return'<option value="'+c+'">'+c+'</option>';}).join("");
+}
+
 function renderTab(){
   switch(S.tab){
     case"dashboard":renderDashboard();break;
     case"students":S.selected?renderStudentDetail(S.selected):renderStudents();break;
     case"fees":renderMonthlyFees("hostel");break;
     case"leave":renderLeave();break;
+    case"occupancy":renderOccupancy();break;
     case"library":S.selected?renderLibDetail(S.selected):renderLibrary();break;
     case"library-fees":renderMonthlyFees("library");break;
+    case"mess":renderMess();break;
+    case"mess-fees":renderMonthlyFees("mess");break;
+    case"mess-att":renderMessAttendance();break;
+    case"complaints":renderComplaints();break;
+    case"expenses":renderExpenses();break;
     case"broadcast":renderBroadcast();break;
     case"import":renderImport();break;
     case"settings":renderSettings();break;
@@ -587,39 +820,66 @@ async function loadData(){
   setContent('<div class="loading-wrap"><div class="spinner"></div><div class="loading-text">Loading from Supabase…</div></div>');
   try {
     var m=S.curMonth, y=S.curYear;
-    var [stuRes,levRes,libRes,hFeeRes,lFeeRes,setRes] = await Promise.all([
+    var [stuRes,levRes,libRes,messRes,hFeeRes,lFeeRes,mFeeRes,compRes,expRes,hostelRes,roomRes,setRes] = await Promise.all([
       sb.from("hostel_students").select("*").order("name"),
       sb.from("leaves").select("*").order("from_date",{ascending:false}),
       sb.from("library_members").select("*").order("name"),
+      sb.from("mess_members").select("*").order("name"),
       sb.from("monthly_fees").select("*").eq("month",m).eq("year",y),
       sb.from("library_fees").select("*").eq("month",m).eq("year",y),
+      sb.from("mess_fees").select("*").eq("month",m).eq("year",y),
+      sb.from("complaints").select("*").order("created_at",{ascending:false}),
+      sb.from("expenses").select("*").order("expense_date",{ascending:false}).limit(100),
+      sb.from("hostels").select("*").order("name"),
+      sb.from("rooms").select("*").order("room_number"),
       sb.from("app_settings").select("*").eq("id",1).single()
     ]);
 
-    S.students   = stuRes.data||[];
-    S.leaves     = levRes.data||[];
-    S.libMembers = libRes.data||[];
-    S.settings   = setRes.data||{};
+    S.students=stuRes.data||[];
+    S.leaves=levRes.data||[];
+    S.libMembers=libRes.data||[];
+    S.messMembers=messRes.data||[];
+    S.complaints=compRes.data||[];
+    S.expenses=expRes.data||[];
+    S.hostels=hostelRes.data||[];
+    S.rooms=roomRes.data||[];
+    S.settings=setRes.data||{};
 
-    var hFeeMap={}, lFeeMap={};
+    // Update brand label
+    if(S.settings.inst_name){document.getElementById("brand-label").textContent=S.settings.inst_name;}
+
+    // Build fee summaries
+    var hFeeMap={},lFeeMap={},mFeeMap={};
     (hFeeRes.data||[]).forEach(function(f){hFeeMap[f.student_id]=f;});
     (lFeeRes.data||[]).forEach(function(f){lFeeMap[f.member_id]=f;});
+    (mFeeRes.data||[]).forEach(function(f){mFeeMap[f.member_id]=f;});
 
-    S.monthSummary.hostel = S.students.filter(function(s){return !s.exit_date;}).map(function(s){
+    S.monthSummary.hostel=S.students.filter(function(s){return !s.exit_date;}).map(function(s){
       var fee=hFeeMap[s.id]||null;
       var total=Number(s.monthly_fee_amount||0),disc=Number(s.discount||0),net=Math.max(0,total-disc);
       return fee
-        ?{id:fee.id,studentId:s.id,name:s.name,room:s.room,total:Number(fee.total_amount),discount:Number(fee.discount),net:Number(fee.net_amount),paid:Number(fee.paid_amount),balance:Number(fee.balance),status:fee.status,mode:fee.mode,dueDate:fee.due_date}
-        :{id:null,studentId:s.id,name:s.name,room:s.room,total:total,discount:disc,net:net,paid:0,balance:net,status:"pending",mode:"",dueDate:computeDueDate(s,m,y)};
+        ?{id:fee.id,studentId:s.id,name:s.name,room:s.room,hostel:s.hostel_name,total:Number(fee.total_amount),discount:Number(fee.discount),net:Number(fee.net_amount),paid:Number(fee.paid_amount),balance:Number(fee.balance),status:fee.status,mode:fee.mode,dueDate:fee.due_date}
+        :{id:null,studentId:s.id,name:s.name,room:s.room,hostel:s.hostel_name,total:total,discount:disc,net:net,paid:0,balance:net,status:"pending",mode:"",dueDate:computeDueDate(s,m,y)};
     });
 
-    S.monthSummary.library = S.libMembers.filter(function(m){return !m.exit_date;}).map(function(mb){
+    S.monthSummary.library=S.libMembers.filter(function(mb){return !mb.exit_date;}).map(function(mb){
       var fee=lFeeMap[mb.id]||null;
       var total=Number(mb.monthly_fee_amount||0),disc=Number(mb.discount||0),net=Math.max(0,total-disc);
       return fee
         ?{id:fee.id,memberId:mb.id,studentId:mb.id,name:mb.name,seat:mb.seat_number,total:Number(fee.total_amount),discount:Number(fee.discount),net:Number(fee.net_amount),paid:Number(fee.paid_amount),balance:Number(fee.balance),status:fee.status,mode:fee.mode,dueDate:fee.due_date}
         :{id:null,memberId:mb.id,studentId:mb.id,name:mb.name,seat:mb.seat_number,total:total,discount:disc,net:net,paid:0,balance:net,status:"pending",mode:"",dueDate:computeDueDate(mb,m,y)};
     });
+
+    S.monthSummary.mess=S.messMembers.filter(function(mm){return !mm.exit_date;}).map(function(mm){
+      var fee=mFeeMap[mm.id]||null;
+      var total=Number(mm.monthly_fee_amount||0),disc=Number(mm.discount||0),net=Math.max(0,total-disc);
+      return fee
+        ?{id:fee.id,memberId:mm.id,studentId:mm.id,name:mm.name,meal_plan:mm.meal_plan,total:Number(fee.total_amount),discount:Number(fee.discount),net:Number(fee.net_amount),paid:Number(fee.paid_amount),balance:Number(fee.balance),status:fee.status,mode:fee.mode,dueDate:fee.due_date}
+        :{id:null,memberId:mm.id,studentId:mm.id,name:mm.name,meal_plan:mm.meal_plan,total:total,discount:disc,net:net,paid:0,balance:net,status:"pending",mode:"",dueDate:computeDueDate(mm,m,y)};
+    });
+
+    // Auto fee generation check
+    await autoGenerateFees();
 
     buildNotifs();
     renderTab();
@@ -628,19 +888,47 @@ async function loadData(){
   }
 }
 
+async function autoGenerateFees(){
+  // Auto-generate fee records for active students/members who don't have one for the current month
+  var m=S.curMonth,y=S.curYear;
+  var hExisting=new Set(S.monthSummary.hostel.filter(function(x){return x.id;}).map(function(x){return x.studentId;}));
+  var toCreateH=S.students.filter(function(s){return !s.exit_date&&!hExisting.has(s.id)&&Number(s.monthly_fee_amount)>0;});
+  for(var i=0;i<toCreateH.length;i++){
+    var s=toCreateH[i];
+    var net=Math.max(0,Number(s.monthly_fee_amount)-Number(s.discount||0));
+    await sb.from("monthly_fees").insert({id:uid("HF"),student_id:s.id,student_name:s.name,month:m,year:y,due_date:computeDueDate(s,m,y),total_amount:Number(s.monthly_fee_amount),discount:Number(s.discount||0),net_amount:net,paid_amount:0,balance:net,status:"pending"});
+  }
+  // Same for mess
+  var mExisting=new Set(S.monthSummary.mess.filter(function(x){return x.id;}).map(function(x){return x.memberId;}));
+  var toCreateM=S.messMembers.filter(function(mm){return !mm.exit_date&&!mExisting.has(mm.id)&&Number(mm.monthly_fee_amount)>0;});
+  for(var j=0;j<toCreateM.length;j++){
+    var mm=toCreateM[j];
+    var net2=Math.max(0,Number(mm.monthly_fee_amount)-Number(mm.discount||0));
+    await sb.from("mess_fees").insert({id:uid("MF"),member_id:mm.id,member_name:mm.name,month:m,year:y,due_date:computeDueDate(mm,m,y),total_amount:Number(mm.monthly_fee_amount),discount:Number(mm.discount||0),net_amount:net2,paid_amount:0,balance:net2,status:"pending"});
+  }
+}
+
 function buildNotifs(){
   var items=[];
-  var all=S.monthSummary.hostel.concat(S.monthSummary.library.map(function(x){return Object.assign({},x,{_lib:true});}));
+  var all=S.monthSummary.hostel.concat(
+    S.monthSummary.library.map(function(x){return Object.assign({},x,{_lib:true});}),
+    S.monthSummary.mess.map(function(x){return Object.assign({},x,{_mess:true});})
+  );
   all.forEach(function(x){
-    if(x.status==="overdue")items.push({icon:"🔴",msg:(x._lib?"[Lib] ":"")+x.name+" — overdue ₹"+Number(x.balance||0).toLocaleString("en-IN"),color:"#c62828"});
-    else if(x.status==="partial")items.push({icon:"⚡",msg:(x._lib?"[Lib] ":"")+x.name+" — partial ₹"+Number(x.balance||0).toLocaleString("en-IN")+" remaining",color:"#e65100"});
-    else if(x.status==="pending"&&x.dueDate){var days=daysAgo(x.dueDate);if(days!==null&&days<=3)items.push({icon:"⏰",msg:(x._lib?"[Lib] ":"")+x.name+" — due "+fmtDate(x.dueDate),color:"#f57f17"});}
+    var tag=x._lib?"[Lib] ":x._mess?"[Mess] ":"";
+    if(x.status==="overdue")items.push({icon:"🔴",msg:tag+x.name+" — overdue "+fmtM(x.balance),color:"#c62828"});
+    else if(x.status==="partial")items.push({icon:"⚡",msg:tag+x.name+" — partial "+fmtM(x.balance)+" remaining",color:"#e65100"});
+    else if(x.status==="pending"&&x.dueDate){var days=daysAgo(x.dueDate);if(days!==null&&days<=3)items.push({icon:"⏰",msg:tag+x.name+" — due "+fmtDate(x.dueDate),color:"#f57f17"});}
   });
+  // Open complaints
+  var openComps=S.complaints.filter(function(c){return c.status==="open";});
+  if(openComps.length>0)items.push({icon:"🎫",msg:openComps.length+" open complaint"+(openComps.length>1?"s":""),color:"#1565c0"});
+
   document.getElementById("notif-count").textContent=items.length;
   document.getElementById("notif-total").textContent=items.length+" alert"+(items.length!==1?"s":"");
   var list=document.getElementById("notif-list");
   if(!items.length){list.innerHTML='<div class="empty" style="padding:14px">No alerts 🎉</div>';return;}
-  list.innerHTML=items.map(function(it){return'<div class="notif-item"><span>'+it.icon+'</span><span style="color:'+it.color+'">'+it.msg+'</span></div>';}).join("");
+  list.innerHTML=items.slice(0,15).map(function(it){return'<div class="notif-item"><span>'+it.icon+'</span><span style="color:'+it.color+'">'+it.msg+'</span></div>';}).join("");
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -649,43 +937,41 @@ function buildNotifs(){
 function renderDashboard(){
   var actH=S.students.filter(function(s){return !s.exit_date;});
   var actL=S.libMembers.filter(function(m){return !m.exit_date;});
-  var hPaid=S.monthSummary.hostel.filter(function(x){return x.status==="paid";});
-  var lPaid=S.monthSummary.library.filter(function(x){return x.status==="paid";});
-  var hPart=S.monthSummary.hostel.filter(function(x){return x.status==="partial";});
-  var hPend=S.monthSummary.hostel.filter(function(x){return x.status==="pending"||x.status==="overdue";});
-  var lPend=S.monthSummary.library.filter(function(x){return x.status==="pending"||x.status==="overdue";});
+  var actM=S.messMembers.filter(function(m){return !m.exit_date;});
   var hCol=S.monthSummary.hostel.reduce(function(a,x){return a+Number(x.paid||0);},0);
   var lCol=S.monthSummary.library.reduce(function(a,x){return a+Number(x.paid||0);},0);
+  var mCol=S.monthSummary.mess.reduce(function(a,x){return a+Number(x.paid||0);},0);
   var hBal=S.monthSummary.hostel.reduce(function(a,x){return a+Number(x.balance||0);},0);
   var lBal=S.monthSummary.library.reduce(function(a,x){return a+Number(x.balance||0);},0);
+  var mBal=S.monthSummary.mess.reduce(function(a,x){return a+Number(x.balance||0);},0);
   var curLeaves=S.leaves.filter(function(l){return l.is_current===true||l.is_current==="true";});
+  var openComps=S.complaints.filter(function(c){return c.status==="open";}).length;
   var mn=MONTHS[S.curMonth-1]+" "+S.curYear;
 
-  var pendRows=hPend.concat(lPend.map(function(x){return Object.assign({},x,{_lib:true});})).slice(0,6).map(function(x){
-    return'<div class="bulk-row" style="cursor:pointer" onclick="go(\''+(x._lib?"library-fees":"fees")+'\')">'
-      +'<div style="flex:1;font-weight:600;font-size:12px">'+(x._lib?'<span class="lib-badge">Lib</span> ':"")+x.name+'</div>'
-      +'<div style="font-size:11px;color:#64748b">Due '+fmtDate(x.dueDate)+'</div>'
-      +'<div style="margin-left:8px">'+chip(x.status)+'</div>'
-      +'<div style="font-weight:700;font-size:12px;margin-left:8px;color:#c62828">'+fmtM(x.balance)+'</div>'
-      +'</div>';
-  }).join("");
+  var totalCol=hCol+lCol+mCol,totalBal=hBal+lBal+mBal;
+  var monthExpenses=S.expenses.filter(function(e){
+    if(!e.expense_date)return false;
+    var d=new Date(e.expense_date);return d.getMonth()+1===S.curMonth&&d.getFullYear()===S.curYear;
+  }).reduce(function(a,e){return a+Number(e.amount||0);},0);
 
   setContent(
     '<div class="stats-grid">'
-    +sc("Active Students",actH.length,actH.length+" hostel occupants","🏠","#1565c0")
-    +sc("Library Members",actL.length,actL.length+" active seats","📚","#2e7d32")
-    +sc("Collected — "+mn,fmtM(hCol+lCol),"Hostel "+fmtM(hCol)+" · Lib "+fmtM(lCol),"💰","#43a047")
-    +sc("Pending Balance",fmtM(hBal+lBal),hPend.length+" unpaid · "+hPart.length+" partial","⚠️","#c62828")
+    +sc("Hostel Students",actH.length,actH.length+" active","🏠","#1565c0")
+    +sc("Library Members",actL.length,actL.length+" active","📚","#2e7d32")
+    +sc("Mess Members",actM.length,actM.length+" active","🍽️","#e65100")
+    +sc("Collected — "+mn,fmtM(totalCol),"Pending: "+fmtM(totalBal),"💰","#43a047")
     +'</div>'
-    +'<div class="g2">'
-    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">🏠 Hostel — '+mn+'</div><button class="btn-sm btn-blue" onclick="go(\'fees\')">View All</button></div>'+buildMiniFeeSummary(S.monthSummary.hostel)+'</div>'
-    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">📚 Library — '+mn+'</div><button class="btn-sm btn-green" onclick="go(\'library-fees\')">View All</button></div>'+buildMiniFeeSummary(S.monthSummary.library)+'</div>'
+    +'<div class="stats-grid">'
+    +sc("Expenses — "+mn,fmtM(monthExpenses),"This month's expenses","💸","#6a1b9a")
+    +sc("Net Income",fmtM(totalCol-monthExpenses),"Collection − Expenses","📊",totalCol-monthExpenses>=0?"#43a047":"#c62828")
+    +sc("On Leave",curLeaves.length,curLeaves.length+" students","📋","#f57f17")
+    +sc("Open Tickets",openComps,openComps+" complaint"+(openComps!==1?"s":""),"🎫","#c62828")
     +'</div>'
-    +'<div class="g2">'
-    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">⚠️ Pending / Partial</div><span style="font-size:11px;color:#94a3b8">'+(hPend.length+lPend.length)+" students"+'</span></div>'+(pendRows||'<div class="empty">All fees collected! 🎉</div>')+'</div>'
-    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">📋 On Leave Now</div><button class="btn-sm btn-yellow" onclick="go(\'leave\')">View</button></div>'
-    +(curLeaves.length?curLeaves.slice(0,5).map(function(l){return'<div class="leave-cur"><div><div style="font-weight:700;font-size:13px">'+l.student_name+'</div><div style="font-size:11px;color:#64748b">'+fmtDate(l.from_date)+' → '+fmtDate(l.to_date)+'</div></div><span class="chip chip-pending">On Leave</span></div>';}).join(""):'<div class="empty">No active leaves</div>')
-    +'</div></div>'
+    +'<div class="g3">'
+    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">🏠 Hostel — '+mn+'</div><button class="btn-sm btn-blue" onclick="go(\'fees\')">View</button></div>'+buildMiniFeeSummary(S.monthSummary.hostel)+'</div>'
+    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">📚 Library — '+mn+'</div><button class="btn-sm btn-green" onclick="go(\'library-fees\')">View</button></div>'+buildMiniFeeSummary(S.monthSummary.library)+'</div>'
+    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">🍽️ Mess — '+mn+'</div><button class="btn-sm btn-orange" onclick="go(\'mess-fees\')">View</button></div>'+buildMiniFeeSummary(S.monthSummary.mess)+'</div>'
+    +'</div>'
   );
 }
 
@@ -707,34 +993,22 @@ function buildMiniFeeSummary(list){
 }
 
 // ══════════════════════════════════════════════════════════════
-//  STUDENTS
+//  STUDENTS (with hostel filter)
 // ══════════════════════════════════════════════════════════════
+var _curCourseFilter="all",_curHostelFilter="all";
 function renderStudents(){
   var active=S.students.filter(function(s){return !s.exit_date;});
-  var courses={};
-  S.students.forEach(function(s){if(s.course&&!s.exit_date)courses[s.course]=(courses[s.course]||0)+1;});
-  var tags=Object.entries(courses).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  var hostelNames=[];
+  S.students.forEach(function(s){if(s.hostel_name&&!s.exit_date&&hostelNames.indexOf(s.hostel_name)===-1)hostelNames.push(s.hostel_name);});
 
   var html='<div class="search-bar">'
     +'<input class="search-inp" id="s-search" placeholder="🔍 Search by name, room, phone, course…" oninput="filterStudents()"/>'
+    +'<select class="filter-sel" id="s-hostel-filter" onchange="filterStudents()"><option value="all">All Hostels</option>'+hostelNames.map(function(h){return'<option value="'+h+'">'+h+'</option>';}).join("")+'</select>'
     +'<select class="filter-sel" id="s-status-filter" onchange="filterStudents()"><option value="all">All Status</option><option value="paid">Paid</option><option value="partial">Partial</option><option value="pending">Pending</option><option value="overdue">Overdue</option></select>'
     +'<select class="filter-sel" id="s-exit-filter" onchange="filterStudents()"><option value="active">Active</option><option value="exited">Exited</option><option value="all">All</option></select>'
     +'</div>';
-  html+='<div class="filter-tag">'
-    +'<span class="ftag active" id="ftag-all" onclick="setCourseFilter(\'all\')">All ('+active.length+')</span>'
-    +tags.map(function(p){return'<span class="ftag" id="ftag-'+p[0]+'" onclick="setCourseFilter(\''+p[0]+'\')">'+p[0]+' ('+p[1]+')</span>';}).join("")
-    +'</div>';
   html+='<div id="s-result-count" class="result-count"></div><div id="s-grid" class="s-grid"></div>';
   setContent(html);
-  filterStudents();
-}
-
-var _curCourseFilter="all";
-function setCourseFilter(course){
-  _curCourseFilter=course;
-  document.querySelectorAll(".filter-tag .ftag").forEach(function(el){el.classList.remove("active");});
-  var el=document.getElementById("ftag-"+(course==="all"?"all":course));
-  if(el)el.classList.add("active");
   filterStudents();
 }
 
@@ -742,11 +1016,12 @@ function filterStudents(){
   var q=(document.getElementById("s-search")||{value:""}).value.toLowerCase().trim();
   var stFlt=(document.getElementById("s-status-filter")||{value:"all"}).value;
   var exFlt=(document.getElementById("s-exit-filter")||{value:"active"}).value;
+  var hFlt=(document.getElementById("s-hostel-filter")||{value:"all"}).value;
   var list=S.students.filter(function(s){
     if(exFlt==="active"&&s.exit_date)return false;
     if(exFlt==="exited"&&!s.exit_date)return false;
-    if(_curCourseFilter!=="all"&&s.course!==_curCourseFilter)return false;
-    if(q){var hay=[s.name,s.room,s.phone,s.course,s.email].join(" ").toLowerCase();if(!hay.includes(q))return false;}
+    if(hFlt!=="all"&&s.hostel_name!==hFlt)return false;
+    if(q){var hay=[s.name,s.room,s.phone,s.course,s.email,s.hostel_name].join(" ").toLowerCase();if(!hay.includes(q))return false;}
     if(stFlt!=="all"){var sr=S.monthSummary.hostel.find(function(x){return String(x.studentId)===String(s.id);});if((sr?sr.status:"pending")!==stFlt)return false;}
     return true;
   });
@@ -757,9 +1032,10 @@ function filterStudents(){
     var sr=S.monthSummary.hostel.find(function(x){return String(x.studentId)===String(s.id);});
     var st=sr?sr.status:"—";var bal=sr?Number(sr.balance||0):0;
     var libMember=S.libMembers.find(function(m){return String(m.linked_hostel_id)===String(s.id)&&!m.exit_date;});
+    var messMember=S.messMembers.find(function(m){return String(m.linked_hostel_id)===String(s.id)&&!m.exit_date;});
     return'<div class="s-card" onclick="openStudentDetail(\''+s.id+'\')"> '
-      +'<div class="s-card-top">'+av(s.name,38)+'<div><div class="s-card-name">'+s.name+'</div><div class="s-card-sub">'+(s.room?"🏠 "+s.room:"No room assigned")+(s.course?" · "+s.course:"")+'</div></div></div>'
-      +'<div class="s-card-bot"><div class="s-card-meta">'+fmtDate(s.joining_date)+(libMember?' <span class="lib-badge">Lib</span>':"")+'</div>'
+      +'<div class="s-card-top">'+av(s.name,38)+'<div><div class="s-card-name">'+s.name+'</div><div class="s-card-sub">'+(s.hostel_name?'<span class="hostel-badge">'+s.hostel_name+'</span> ':'')+(s.room?"🏠 "+s.room:"")+(s.course?" · "+s.course:"")+'</div></div></div>'
+      +'<div class="s-card-bot"><div class="s-card-meta">'+fmtDate(s.joining_date)+(libMember?' <span class="lib-badge">Lib</span>':"")+(messMember?' <span class="mess-badge">Mess</span>':'')+'</div>'
       +(st!=="—"?chip(st)+(bal>0?'<span class="bal-badge">₹'+bal.toLocaleString("en-IN")+'</span>':""):"")+'</div></div>';
   }).join("");
 }
@@ -769,22 +1045,25 @@ function renderStudentDetail(id){
   var s=S.students.find(function(x){return String(x.id)===String(id);});
   if(!s){go("students");return;}
   var libMember=S.libMembers.find(function(m){return String(m.linked_hostel_id)===String(s.id)&&!m.exit_date;});
+  var messMember=S.messMembers.find(function(m){return String(m.linked_hostel_id)===String(s.id)&&!m.exit_date;});
   var sr=S.monthSummary.hostel.find(function(x){return String(x.studentId)===String(s.id);});
   var curLeave=S.leaves.find(function(l){return String(l.student_id)===String(s.id)&&l.is_current;});
   var mn=MONTHS[S.curMonth-1]+" "+S.curYear;
+  var editBtns=canEdit()?
+    '<button class="btn-sm btn-blue" onclick="openEditStudent(\''+s.id+'\')">✏️ Edit</button>'
+    +(!s.exit_date?'<button class="btn-sm btn-red" onclick="doHostelExit(\''+s.id+'\')">🚪 Exit</button>':"")
+    +'<button class="btn-sm btn-orange" onclick="showIdCard(\''+s.id+'\',\'hostel\')">🪪 ID</button>'
+    +(!s.exit_date&&!libMember?'<button class="btn-sm btn-green" onclick="doLinkLibrary(\''+s.id+'\')">📚 Lib</button>':"")
+    +(!s.exit_date&&!messMember?'<button class="btn-sm btn-orange" onclick="doLinkMess(\''+s.id+'\')">🍽️ Mess</button>':"")
+    +'<button class="btn-sm btn-gray" onclick="openDelete(\''+s.id+'\',\'hostel\',\''+s.name.replace(/'/g,"")+'\')" style="background:#fce4ec;color:#c62828">🗑️</button>'
+    :'<button class="btn-sm btn-orange" onclick="showIdCard(\''+s.id+'\',\'hostel\')">🪪 ID</button>';
 
   setContent(
     '<button class="back-btn" onclick="S.selected=null;renderStudents()">← Back to Students</button>'
     +'<div class="card"><div class="profile-top">'+av(s.name,52)
     +'<div><div class="profile-name">'+s.name+(s.exit_date?'<span class="chip chip-exited" style="margin-left:8px;font-size:11px">Exited</span>':"")+'</div>'
-    +'<div class="profile-sub">'+(s.room?"🏠 Room "+s.room+" · ":"")+(s.course||"")+'</div></div>'
-    +'<div style="margin-left:auto;display:flex;gap:7px;flex-wrap:wrap">'
-    +'<button class="btn-sm btn-blue" onclick="openEditStudent(\''+s.id+'\')">✏️ Edit</button>'
-    +(!s.exit_date?'<button class="btn-sm btn-red" onclick="doHostelExit(\''+s.id+'\')">🚪 Exit</button>':"")
-    +'<button class="btn-sm btn-orange" onclick="showIdCard(\''+s.id+'\',\'hostel\')">🪪 ID Card</button>'
-    +(!s.exit_date&&!libMember?'<button class="btn-sm btn-green" onclick="doLinkLibrary(\''+s.id+'\')">📚 Enroll Library</button>':"")
-    +'<button class="btn-sm btn-gray" onclick="openDelete(\''+s.id+'\',\'hostel\',\''+s.name.replace(/'/g,"")+'\''+')" style="background:#fce4ec;color:#c62828">🗑️ Delete</button>'
-    +'</div></div>'
+    +'<div class="profile-sub">'+(s.hostel_name?'<span class="hostel-badge">'+s.hostel_name+'</span> ':'')+(s.room?"🏠 Room "+s.room+" · ":"")+(s.course||"")+'</div></div>'
+    +'<div style="margin-left:auto;display:flex;gap:7px;flex-wrap:wrap">'+editBtns+'</div></div>'
     +'<div class="detail-grid"><div>'
     +frow("📞 Phone",fmt(s.phone))+frow("📧 Email",fmt(s.email))+frow("🎂 DOB",fmtDate(s.dob))
     +frow("📅 Joining",fmtDate(s.joining_date))+(s.exit_date?frow("🚪 Exit",fmtDate(s.exit_date)):"")
@@ -793,80 +1072,77 @@ function renderStudentDetail(id){
     +(Number(s.discount)>0?frow("🏷️ Discount",fmtM(s.discount)):"")
     +frow("📆 Due Day",dueDayLabel(s))+frow("📝 Notes",fmt(s.notes))
     +(libMember?frow("📚 Library",'<span class="lib-badge" style="cursor:pointer" onclick="openLibDetail(\''+libMember.id+'\')">Seat '+fmt(libMember.seat_number)+'</span>'):"")
+    +(messMember?frow("🍽️ Mess",'<span class="mess-badge">'+fmt(messMember.meal_plan)+'</span>'):"")
     +'</div></div></div>'
-
-    +(sr?'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">₹ '+mn+' Fee</div>'
+    +(sr&&canEdit()?'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">₹ '+mn+' Fee</div>'
       +'<div style="display:flex;gap:6px">'
       +(sr.status!=="paid"?'<button class="btn-sm btn-pay" onclick="openPayModal(\''+sr.id+'\',\'hostel\',\''+s.id+'\',\''+mn+'\')">💳 Pay</button>':"")
       +(sr.status==="paid"||sr.status==="partial"?'<button class="btn-sm btn-blue" onclick="doReceipt(\'hostel\',\''+sr.id+'\',\''+s.id+'\')">📄 Receipt</button>':"")
       +'<button class="btn-sm btn-yellow" onclick="openAdvance(\''+s.id+'\',\'hostel\',\''+s.name+'\')">📅 Advance</button>'
       +'<button class="btn-sm btn-gray" onclick="openWA(\'hostel\',\''+s.id+'\','+S.curMonth+','+S.curYear+')">📱 WhatsApp</button>'
       +'</div></div>'
-      +'<div class="g2" style="margin:0"><div>'+frow("Monthly",fmtM(sr.total))+frow("Discount",fmtM(sr.discount||0))+frow("Net Payable",fmtM(sr.net))+'</div>'
+      +'<div class="g2" style="margin:0"><div>'+frow("Monthly",fmtM(sr.total))+frow("Discount",fmtM(sr.discount||0))+frow("Net",fmtM(sr.net))+'</div>'
       +'<div>'+frow("Paid",fmtM(sr.paid||0))+frow("Balance",fmtM(sr.balance||0))+frow("Status",chip(sr.status))+frow("Due",fmtDate(sr.dueDate))+'</div></div></div>':"")
-
     +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">📋 Leave</div>'
-    +'<button class="btn-sm btn-yellow" onclick="openLeaveModal(\''+s.id+'\',\''+s.name.replace(/'/g,"")+'\')">+ Grant Leave</button>'
+    +(canEdit()?'<button class="btn-sm btn-yellow" onclick="openLeaveModal(\''+s.id+'\',\''+s.name.replace(/'/g,"")+'\')">+ Grant Leave</button>':'')
     +'</div>'
-    +(curLeave?'<div class="leave-cur"><div><b>On Leave</b><div style="font-size:11px;color:#64748b">'+fmtDate(curLeave.from_date)+' → '+fmtDate(curLeave.to_date)+'</div></div><button class="btn-outline" onclick="doEndLeave(\''+curLeave.id+'\')">End Leave</button></div>':"")
+    +(curLeave?'<div class="leave-cur"><div><b>On Leave</b><div style="font-size:11px;color:#64748b">'+fmtDate(curLeave.from_date)+' → '+fmtDate(curLeave.to_date)+'</div></div>'+(canEdit()?'<button class="btn-outline" onclick="doEndLeave(\''+curLeave.id+'\')">End</button>':'')+'</div>':"")
     +'<div id="s-fee-hist"></div>'
-    +'<button class="btn-sm btn-gray" style="margin-top:8px" onclick="loadFeeHistory(\''+s.id+'\',\'hostel\',\'s-fee-hist\')">Load Fee History</button>'
-    +'</div>'
+    +'<button class="btn-sm btn-gray" style="margin-top:8px" onclick="loadFeeHistory(\''+s.id+'\',\'hostel\',\'s-fee-hist\')">Load Fee History</button></div>'
   );
 }
 
 async function loadFeeHistory(id,module,containerId){
   var el=document.getElementById(containerId);
   if(el)el.innerHTML='<div style="padding:8px;color:#94a3b8;font-size:12px">Loading…</div>';
-  var table=module==="library"?"library_fees":"monthly_fees";
-  var idField=module==="library"?"member_id":"student_id";
+  var table=module==="library"?"library_fees":module==="mess"?"mess_fees":"monthly_fees";
+  var idField=module==="library"||module==="mess"?"member_id":"student_id";
   var res=await sb.from(table).select("*").eq(idField,id).order("year",{ascending:false}).order("month",{ascending:false});
   var hist=res.data||[];
   if(!hist.length){if(el)el.innerHTML='<div class="empty">No fee history yet</div>';return;}
   var html=hist.map(function(r){
     var st=String(r.status||"pending");
-    var paid=Number(r.paid_amount||0),bal=Number(r.balance||0),net=Number(r.net_amount||0);
-    return'<div class="fh-row '+st+'">'
-      +'<div style="flex:1"><div style="font-weight:700;font-size:12px">'+MONTHS[parseInt(r.month,10)-1]+' '+r.year+'</div>'
-      +'<div style="font-size:10px;color:#64748b">Due: '+fmtDate(r.due_date)+(r.mode?' · '+r.mode:'')+'</div></div>'
-      +'<div style="text-align:right">'
-      +'<div style="font-size:12px">Net: <strong>'+fmtM(net)+'</strong></div>'
-      +'<div style="font-size:11px;color:#2e7d32">Paid: '+fmtM(paid)+'</div>'
-      +(bal>0?'<div style="font-size:11px;color:#c62828">Bal: '+fmtM(bal)+'</div>':"")
-      +'</div>'+chip(st)
-      +(st!=="paid"?'<button class="btn-sm btn-pay" style="margin-left:4px" onclick="openPayModal(\''+r.id+'\',\''+module+'\',\''+id+'\',\''+MONTHS[parseInt(r.month,10)-1]+' '+r.year+'\')">Pay</button>':"")
-      +'</div>';
+    return'<div class="fh-row">'+
+      '<div style="flex:1"><div style="font-weight:700;font-size:12px">'+MONTHS[parseInt(r.month,10)-1]+' '+r.year+'</div>'+
+      '<div style="font-size:10px;color:#64748b">Due: '+fmtDate(r.due_date)+(r.mode?' · '+r.mode:'')+'</div></div>'+
+      '<div style="text-align:right;font-size:12px"><div>Net: <strong>'+fmtM(r.net_amount)+'</strong></div>'+
+      '<div style="color:#2e7d32">Paid: '+fmtM(r.paid_amount)+'</div>'+
+      (Number(r.balance)>0?'<div style="color:#c62828">Bal: '+fmtM(r.balance)+'</div>':'')+
+      '</div>'+chip(st)+
+      (st!=="paid"&&canEdit()?'<button class="btn-sm btn-pay" style="margin-left:4px" onclick="openPayModal(\''+r.id+'\',\''+module+'\',\''+id+'\',\''+MONTHS[parseInt(r.month,10)-1]+' '+r.year+'\')">Pay</button>':'')+
+      '</div>';
   }).join("");
   if(el)el.innerHTML='<div style="margin-top:8px">'+html+'</div>';
 }
 
-// ── MONTHLY FEES PAGE ────────────────────────────────────────
+// ═══ MONTHLY FEES (unified for hostel/library/mess) ═══
 function renderMonthlyFees(module){
-  var isLib=module==="library";
-  var color=isLib?"#2e7d32":"#1565c0";
-  var list=isLib?S.monthSummary.library:S.monthSummary.hostel;
+  var isLib=module==="library",isMess=module==="mess";
+  var color=isLib?"#2e7d32":isMess?"#e65100":"#1565c0";
+  var list=isLib?S.monthSummary.library:isMess?S.monthSummary.mess:S.monthSummary.hostel;
   var paid=list.filter(function(x){return x.status==="paid";});
   var partial=list.filter(function(x){return x.status==="partial";});
   var pending=list.filter(function(x){return x.status==="pending"||x.status==="overdue";});
   var colAmt=list.reduce(function(a,x){return a+Number(x.paid||0);},0);
   var balAmt=list.reduce(function(a,x){return a+Number(x.balance||0);},0);
   var mn=MONTHS[S.curMonth-1]+" "+S.curYear;
+  var detailFn=isLib?"openLibDetail":isMess?"openMessDetail":"openStudentDetail";
 
   function makeRows(items,showPay){
     if(!items.length)return'<div class="empty" style="padding:12px 0">None</div>';
     return items.map(function(x){
       var sid=x.studentId||x.memberId;
       return'<div class="bulk-row">'
-        +(showPay?'<input type="checkbox" class="bulk-check fee-chk-'+module+'" value="'+sid+'" title="'+x.name+'"/>':'<span style="width:15px"></span>')
+        +(showPay&&canEdit()?'<input type="checkbox" class="bulk-check fee-chk-'+module+'" value="'+sid+'" title="'+x.name+'"/>':'<span style="width:15px"></span>')
         +av(x.name,26)
-        +'<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px;cursor:pointer" onclick="'+(isLib?"openLibDetail":"openStudentDetail")+'(\''+sid+'\')">'+x.name+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px;cursor:pointer" onclick="'+detailFn+'(\''+sid+'\')">'+x.name+'</div>'
         +'<div style="font-size:10px;color:#64748b">'+(x.room||x.seat?"📍 "+(x.room||x.seat)+" · ":"")+'Due '+fmtDate(x.dueDate)+'</div></div>'
         +'<div style="text-align:right;font-size:12px"><div>Net: <strong>'+fmtM(x.net)+'</strong></div>'
         +(Number(x.paid)>0?'<div style="color:#2e7d32">Paid: '+fmtM(x.paid)+'</div>':"")
         +(Number(x.balance)>0?'<div style="color:#c62828">Bal: '+fmtM(x.balance)+'</div>':"")
         +'</div>'+chip(x.status)
         +'<div style="display:flex;gap:4px;margin-left:6px;flex-shrink:0">'
-        +(showPay&&x.id?'<button class="btn-sm btn-pay'+(isLib?" lib":"")+'\" onclick="openPayModal(\''+x.id+'\',\''+module+'\',\''+sid+'\',\''+mn+'\')">💳 Pay</button>':"")
+        +(showPay&&x.id&&canEdit()?'<button class="btn-sm btn-pay'+(isLib?" lib":isMess?" mess":"")+'\" onclick="openPayModal(\''+x.id+'\',\''+module+'\',\''+sid+'\',\''+mn+'\')">💳</button>':"")
         +(x.status==="paid"||x.status==="partial"?'<button class="btn-sm btn-blue" onclick="doReceipt(\''+module+'\',\''+x.id+'\',\''+sid+'\')">📄</button>':"")
         +'<button class="btn-sm btn-gray" onclick="openWA(\''+module+'\',\''+sid+'\','+S.curMonth+','+S.curYear+')">📱</button>'
         +'</div></div>';
@@ -877,19 +1153,19 @@ function renderMonthlyFees(module){
     '<div class="stats-grid">'
     +sc("Paid",paid.length,fmtM(colAmt)+" collected","✅","#43a047")
     +sc("Partial",partial.length,fmtM(partial.reduce(function(a,x){return a+Number(x.balance||0);},0))+" remaining","⚡","#e65100")
-    +sc("Pending",pending.length,fmtM(balAmt)+" total balance due","⏳","#f57f17")
+    +sc("Pending",pending.length,fmtM(balAmt)+" total balance","⏳","#f57f17")
     +sc("Total",list.length,mn,"👥",color)
     +'</div>'
-    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">Bulk Actions — '+mn+'</div>'
+    +(canEdit()?'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">Bulk Actions — '+mn+'</div>'
     +'<div style="display:flex;gap:7px;flex-wrap:wrap">'
     +'<button class="btn-sm btn-gray" onclick="selAllFeeChk(\''+module+'\',true)">Select All Unpaid</button>'
     +'<button class="btn-sm btn-gray" onclick="selAllFeeChk(\''+module+'\',false)">Clear</button>'
-    +'<button class="btn-sm btn-pay'+(isLib?" lib":"")+'\" onclick="doBulkPay(\''+module+'\')">✓ Bulk Mark Paid</button>'
-    +'</div></div></div>'
+    +'<button class="btn-sm btn-pay'+(isLib?" lib":isMess?" mess":"")+'\" onclick="doBulkPay(\''+module+'\')">✓ Bulk Mark Paid</button>'
+    +'</div></div></div>':'')
     +'<div class="fee-cols">'
     +'<div class="fee-col" style="border-top-color:#43a047"><div class="fee-col-title" style="color:#43a047">✅ Paid ('+paid.length+')</div>'+makeRows(paid,false)+'</div>'
     +'<div class="fee-col" style="border-top-color:#e65100"><div class="fee-col-title" style="color:#e65100">⚡ Partial ('+partial.length+')</div>'+makeRows(partial,true)+'</div>'
-    +'<div class="fee-col" style="border-top-color:#c62828"><div class="fee-col-title" style="color:#c62828">⏳ Pending / Overdue ('+pending.length+')</div>'+makeRows(pending,true)+'</div>'
+    +'<div class="fee-col" style="border-top-color:#c62828"><div class="fee-col-title" style="color:#c62828">⏳ Pending ('+pending.length+')</div>'+makeRows(pending,true)+'</div>'
     +'</div>'
   );
 }
@@ -899,12 +1175,13 @@ function selAllFeeChk(module,v){document.querySelectorAll(".fee-chk-"+module).fo
 async function doBulkPay(module){
   var ids=[];document.querySelectorAll(".fee-chk-"+module+":checked").forEach(function(ch){ids.push(ch.value);});
   if(!ids.length){toast("Select students first","err");return;}
-  if(!confirm("Mark "+ids.length+" students as paid for "+MONTHS[S.curMonth-1]+"?"))return;
+  if(!confirm("Mark "+ids.length+" as paid for "+MONTHS[S.curMonth-1]+"?"))return;
   toast("Processing…");
-  var m=S.curMonth,y=S.curYear,paid=0;
-  var list=module==="library"?S.libMembers:S.students;
-  var table=module==="library"?"library_fees":"monthly_fees";
-  var idField=module==="library"?"member_id":"student_id";
+  var m=S.curMonth,y=S.curYear;
+  var list=module==="library"?S.libMembers:module==="mess"?S.messMembers:S.students;
+  var table=module==="library"?"library_fees":module==="mess"?"mess_fees":"monthly_fees";
+  var idField=module==="library"||module==="mess"?"member_id":"student_id";
+  var nameField=module==="library"||module==="mess"?"member_name":"student_name";
   for(var i=0;i<ids.length;i++){
     var sid=ids[i];
     var item=list.find(function(x){return String(x.id)===String(sid);});if(!item)continue;
@@ -912,44 +1189,39 @@ async function doBulkPay(module){
     var fee=res.data;
     var net=Number(item.monthly_fee_amount||0)-Number(item.discount||0);
     if(fee){await sb.from(table).update({paid_amount:net,balance:0,status:"paid"}).eq("id",fee.id);}
-    else{var newFee={id:uid(module==="library"?"LF":"HF"),month:m,year:y,due_date:computeDueDate(item,m,y),total_amount:Number(item.monthly_fee_amount||0),discount:Number(item.discount||0),net_amount:net,paid_amount:net,balance:0,status:"paid",mode:"cash"};newFee[idField]=sid;newFee[module==="library"?"member_name":"student_name"]=item.name;await sb.from(table).insert(newFee);}
-    paid++;
+    else{var nf={id:uid(module==="mess"?"MF":module==="library"?"LF":"HF"),month:m,year:y,due_date:computeDueDate(item,m,y),total_amount:Number(item.monthly_fee_amount||0),discount:Number(item.discount||0),net_amount:net,paid_amount:net,balance:0,status:"paid",mode:"cash"};nf[idField]=sid;nf[nameField]=item.name;await sb.from(table).insert(nf);}
   }
-  toast("Marked "+paid+" as paid ✓","ok");loadData();
+  toast("Bulk paid ✓","ok");loadData();
 }
 
-// ── PAYMENT MODAL ─────────────────────────────────────────────
+// ═══ PAYMENT ═══
 function openPayModal(feeId,module,studentId,monthLabel){
   setV("pay-fee-id",feeId);setV("pay-module",module);setV("pay-student-id",studentId);
   setV("pay-amount","");setV("pay-mode","");setV("pay-note","");
-  var ms=module==="library"?S.monthSummary.library:S.monthSummary.hostel;
+  var ms=module==="library"?S.monthSummary.library:module==="mess"?S.monthSummary.mess:S.monthSummary.hostel;
   var rec=ms.find(function(x){return x.id===feeId;});
-  if(rec){document.getElementById("pay-summary").innerHTML=frow("Net Payable",fmtM(rec.net))+frow("Already Paid",fmtM(rec.paid||0))+frow("Balance",fmtM(rec.balance||0))+frow("Status",chip(rec.status));}
-  document.getElementById("pay-title").textContent="💳 Record Payment — "+monthLabel;
-  var btn=document.getElementById("btn-pay");
-  btn.className="btn-primary"+(module==="library"?" lib":"");
+  if(rec){document.getElementById("pay-summary").innerHTML=frow("Net",fmtM(rec.net))+frow("Paid",fmtM(rec.paid||0))+frow("Balance",fmtM(rec.balance||0))+frow("Status",chip(rec.status));}
+  document.getElementById("pay-title").textContent="💳 Payment — "+monthLabel;
   openM("m-pay");
 }
 
 async function submitPayment(){
   var feeId=v("pay-fee-id"),module=v("pay-module"),studentId=v("pay-student-id");
   var amount=Number(v("pay-amount")),mode=v("pay-mode"),note=v("pay-note");
-  if(!amount||amount<=0){toast("Enter a valid amount","err");return;}
+  if(!amount||amount<=0){toast("Enter valid amount","err");return;}
   var btn=document.getElementById("btn-pay");btn.disabled=true;btn.textContent="Recording…";
-  var table=module==="library"?"library_fees":"monthly_fees";
-  var idField=module==="library"?"member_id":"student_id";
-
-  try {
+  var table=module==="library"?"library_fees":module==="mess"?"mess_fees":"monthly_fees";
+  var idField=module==="library"||module==="mess"?"member_id":"student_id";
+  try{
     var res=await sb.from(table).select("*").eq("id",feeId).maybeSingle();
     var fee=res.data;
     if(!fee){
-      // Fee record doesn't exist yet — create it first
-      var list=module==="library"?S.libMembers:S.students;
+      var list=module==="library"?S.libMembers:module==="mess"?S.messMembers:S.students;
       var item=list.find(function(x){return String(x.id)===String(studentId);});
-      if(!item){toast("Student not found","err");btn.disabled=false;btn.textContent="Record Payment";return;}
+      if(!item){toast("Not found","err");btn.disabled=false;btn.textContent="Record Payment";return;}
       var net=Number(item.monthly_fee_amount||0)-Number(item.discount||0);
-      var newFee={id:feeId||uid(module==="library"?"LF":"HF"),month:S.curMonth,year:S.curYear,due_date:computeDueDate(item,S.curMonth,S.curYear),total_amount:Number(item.monthly_fee_amount||0),discount:Number(item.discount||0),net_amount:net,paid_amount:0,balance:net,status:"pending"};
-      newFee[idField]=studentId;newFee[module==="library"?"member_name":"student_name"]=item.name;
+      var newFee={id:feeId||uid("F"),month:S.curMonth,year:S.curYear,due_date:computeDueDate(item,S.curMonth,S.curYear),total_amount:Number(item.monthly_fee_amount||0),discount:Number(item.discount||0),net_amount:net,paid_amount:0,balance:net,status:"pending"};
+      newFee[idField]=studentId;newFee[module==="library"?"member_name":module==="mess"?"member_name":"student_name"]=item.name;
       await sb.from(table).insert(newFee);
       res=await sb.from(table).select("*").eq("id",newFee.id).single();
       fee=res.data;
@@ -958,25 +1230,20 @@ async function submitPayment(){
     var newBal=Math.max(0,Number(fee.net_amount||0)-newPaid);
     var status=newBal<=0?"paid":newPaid>0?"partial":"pending";
     await sb.from(table).update({paid_amount:newPaid,balance:newBal,status:status,mode:mode,note:note}).eq("id",fee.id);
-    // Log payment
-    var list2=module==="library"?S.libMembers:S.students;
-    var item2=list2.find(function(x){return String(x.id)===String(studentId);});
-    await sb.from("payment_log").insert({id:uid("TXN"),txn_date:today(),module:module,student_id:studentId,student_name:item2?item2.name:"",month:fee.month,year:fee.year,amount:amount,mode:mode,note:note,fee_record_id:fee.id});
+    await sb.from("payment_log").insert({id:uid("TXN"),txn_date:today(),module:module,student_id:studentId,student_name:"",month:fee.month,year:fee.year,amount:amount,mode:mode,note:note,fee_record_id:fee.id});
     btn.disabled=false;btn.textContent="Record Payment";closeM("m-pay");toast("Payment recorded ✓","ok");loadData();
-  } catch(e){btn.disabled=false;btn.textContent="Record Payment";toast(e.message,"err");}
+  }catch(e){btn.disabled=false;btn.textContent="Record Payment";toast(e.message,"err");}
 }
 
-// ── LIBRARY ───────────────────────────────────────────────────
+// ═══ LIBRARY ═══
 function renderLibrary(){
   var html='<div class="search-bar">'
-    +'<input class="search-inp" id="l-search" placeholder="🔍 Search by name, seat, phone, course…" oninput="filterLibrary()"/>'
-    +'<select class="filter-sel" id="l-status-filter" onchange="filterLibrary()"><option value="all">All Status</option><option value="paid">Paid</option><option value="partial">Partial</option><option value="pending">Pending</option><option value="overdue">Overdue</option></select>'
+    +'<input class="search-inp" id="l-search" placeholder="🔍 Search…" oninput="filterLibrary()"/>'
+    +'<select class="filter-sel" id="l-status-filter" onchange="filterLibrary()"><option value="all">All Status</option><option value="paid">Paid</option><option value="partial">Partial</option><option value="pending">Pending</option></select>'
     +'<select class="filter-sel" id="l-exit-filter" onchange="filterLibrary()"><option value="active">Active</option><option value="exited">Exited</option><option value="all">All</option></select>'
-    +'</div>';
-  html+='<div id="l-result-count" class="result-count"></div><div id="l-grid" class="s-grid"></div>';
+    +'</div><div id="l-result-count" class="result-count"></div><div id="l-grid" class="s-grid"></div>';
   setContent(html);filterLibrary();
 }
-
 function filterLibrary(){
   var q=(document.getElementById("l-search")||{value:""}).value.toLowerCase().trim();
   var stF=(document.getElementById("l-status-filter")||{value:"all"}).value;
@@ -984,89 +1251,297 @@ function filterLibrary(){
   var list=S.libMembers.filter(function(m){
     if(exF==="active"&&m.exit_date)return false;
     if(exF==="exited"&&!m.exit_date)return false;
-    if(q){var hay=[m.name,m.seat_number,m.phone,m.course,m.email].join(" ").toLowerCase();if(!hay.includes(q))return false;}
+    if(q){var hay=[m.name,m.seat_number,m.phone,m.course].join(" ").toLowerCase();if(!hay.includes(q))return false;}
     if(stF!=="all"){var sr=S.monthSummary.library.find(function(x){return String(x.memberId)===String(m.id);});if((sr?sr.status:"pending")!==stF)return false;}
     return true;
   });
   var rc=document.getElementById("l-result-count");if(rc)rc.textContent=list.length+" member"+(list.length!==1?"s":"");
   var grid=document.getElementById("l-grid");if(!grid)return;
-  if(!list.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1;padding:30px 0">No members found</div>';return;}
+  if(!list.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1">No members found</div>';return;}
   grid.innerHTML=list.map(function(m){
     var sr=S.monthSummary.library.find(function(x){return String(x.memberId)===String(m.id);});
     var st=sr?sr.status:"—";var bal=sr?Number(sr.balance||0):0;
-    return'<div class="s-card lib" onclick="openLibDetail(\''+m.id+'\')"> '
-      +'<div class="s-card-top">'+av(m.name,38,"#2e7d32")+'<div><div class="s-card-name">'+m.name+'</div><div class="s-card-sub">'+(m.seat_number?"📚 Seat "+m.seat_number+" · ":"")+(m.course||"")+'</div></div></div>'
-      +'<div class="s-card-bot"><div class="s-card-meta">'+fmtDate(m.joining_date)+'</div>'
-      +(st!=="—"?chip(st)+(bal>0?'<span class="bal-badge">₹'+bal.toLocaleString("en-IN")+'</span>':""):"")+'</div></div>';
+    return'<div class="s-card lib" onclick="openLibDetail(\''+m.id+'\')"><div class="s-card-top">'+av(m.name,38,"#2e7d32")+'<div><div class="s-card-name">'+m.name+'</div><div class="s-card-sub">'+(m.seat_number?"📚 "+m.seat_number+" · ":"")+(m.course||"")+'</div></div></div>'
+      +'<div class="s-card-bot"><div class="s-card-meta">'+fmtDate(m.joining_date)+'</div>'+(st!=="—"?chip(st)+(bal>0?'<span class="bal-badge">₹'+bal.toLocaleString("en-IN")+'</span>':""):"")+'</div></div>';
   }).join("");
 }
-
 function openLibDetail(id){S.selected=id;S.tab="library";renderLibDetail(id);}
 function renderLibDetail(id){
   var m=S.libMembers.find(function(x){return String(x.id)===String(id);});if(!m){go("library");return;}
   var sr=S.monthSummary.library.find(function(x){return String(x.memberId)===String(id);});
-  var hostelLink=m.linked_hostel_id?S.students.find(function(s){return String(s.id)===String(m.linked_hostel_id);}):null;
   var mn=MONTHS[S.curMonth-1]+" "+S.curYear;
   setContent(
-    '<button class="back-btn" onclick="S.selected=null;renderLibrary()">← Back to Library</button>'
+    '<button class="back-btn" onclick="S.selected=null;renderLibrary()">← Back</button>'
     +'<div class="card"><div class="profile-top">'+av(m.name,52,"#2e7d32")
-    +'<div><div class="profile-name">'+m.name+(m.exit_date?'<span class="chip chip-exited" style="margin-left:8px;font-size:11px">Exited</span>':"")+'</div>'
-    +'<div class="profile-sub">'+(m.seat_number?"📚 Seat "+m.seat_number+" · ":"")+(m.course||"")+'</div></div>'
-    +'<div style="margin-left:auto;display:flex;gap:7px;flex-wrap:wrap">'
-    +'<button class="btn-sm btn-blue" onclick="openEditLibMember(\''+m.id+'\')">✏️ Edit</button>'
-    +(!m.exit_date?'<button class="btn-sm btn-red" onclick="doLibExit(\''+m.id+'\')">🚪 Exit</button>':"")
-    +'<button class="btn-sm btn-orange" onclick="showIdCard(\''+m.id+'\',\'library\')">🪪 ID Card</button>'
-    +'<button class="btn-sm btn-gray" onclick="openDelete(\''+m.id+'\',\'library\',\''+m.name.replace(/'/g,"")+'\''+')" style="background:#fce4ec;color:#c62828">🗑️ Delete</button>'
-    +'</div></div>'
-    +'<div class="detail-grid"><div>'+frow("📞 Phone",fmt(m.phone))+frow("📧 Email",fmt(m.email))+frow("🎂 DOB",fmtDate(m.dob))+frow("📅 Joining",fmtDate(m.joining_date))+(m.exit_date?frow("🚪 Exit",fmtDate(m.exit_date)):"")+'</div>'
-    +'<div>'+frow("💰 Monthly Fee",fmtM(m.monthly_fee_amount))+(Number(m.discount)>0?frow("🏷️ Discount",fmtM(m.discount)):"")+frow("📆 Due Day",dueDayLabel(m))+frow("📝 Notes",fmt(m.notes))+(hostelLink?frow("🏠 Hostel",'<span style="cursor:pointer;color:#1565c0" onclick="openStudentDetail(\''+hostelLink.id+'\')">'+hostelLink.name+'</span>'):"")+'</div></div></div>'
-    +(sr?'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">₹ '+mn+' Fee</div>'
-      +'<div style="display:flex;gap:6px">'
+    +'<div><div class="profile-name">'+m.name+'</div><div class="profile-sub">'+(m.seat_number?"📚 Seat "+m.seat_number+" · ":"")+(m.course||"")+'</div></div>'
+    +(canEdit()?'<div style="margin-left:auto;display:flex;gap:7px;flex-wrap:wrap"><button class="btn-sm btn-blue" onclick="openEditLibMember(\''+m.id+'\')">✏️</button><button class="btn-sm btn-orange" onclick="showIdCard(\''+m.id+'\',\'library\')">🪪</button></div>':'')
+    +'</div>'
+    +'<div class="detail-grid"><div>'+frow("📞 Phone",fmt(m.phone))+frow("📧 Email",fmt(m.email))+frow("📅 Joining",fmtDate(m.joining_date))+'</div>'
+    +'<div>'+frow("💰 Fee",fmtM(m.monthly_fee_amount))+frow("📆 Due",dueDayLabel(m))+frow("📝 Notes",fmt(m.notes))+'</div></div></div>'
+    +(sr&&canEdit()?'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">₹ '+mn+'</div><div style="display:flex;gap:6px">'
       +(sr.status!=="paid"?'<button class="btn-sm btn-pay lib" onclick="openPayModal(\''+sr.id+'\',\'library\',\''+m.id+'\',\''+mn+'\')">💳 Pay</button>':"")
-      +(sr.status==="paid"||sr.status==="partial"?'<button class="btn-sm btn-blue" onclick="doReceipt(\'library\',\''+sr.id+'\',\''+m.id+'\')">📄 Receipt</button>':"")
-      +'<button class="btn-sm btn-yellow" onclick="openAdvance(\''+m.id+'\',\'library\',\''+m.name+'\')">📅 Advance</button>'
-      +'<button class="btn-sm btn-gray" onclick="openWA(\'library\',\''+m.id+'\','+S.curMonth+','+S.curYear+')">📱 WhatsApp</button>'
+      +'<button class="btn-sm btn-gray" onclick="openWA(\'library\',\''+m.id+'\','+S.curMonth+','+S.curYear+')">📱</button>'
       +'</div></div>'
-      +'<div class="g2" style="margin:0"><div>'+frow("Monthly",fmtM(sr.total))+frow("Discount",fmtM(sr.discount||0))+frow("Net Payable",fmtM(sr.net))+'</div>'
-      +'<div>'+frow("Paid",fmtM(sr.paid||0))+frow("Balance",fmtM(sr.balance||0))+frow("Status",chip(sr.status))+frow("Due",fmtDate(sr.dueDate))+'</div></div></div>':"")
-    +'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">📜 Fee History</div></div>'
-    +'<div id="l-fee-hist"></div><button class="btn-sm btn-gray" onclick="loadFeeHistory(\''+m.id+'\',\'library\',\'l-fee-hist\')">Load Fee History</button></div>'
+      +'<div class="g2" style="margin:0"><div>'+frow("Net",fmtM(sr.net))+frow("Paid",fmtM(sr.paid||0))+'</div><div>'+frow("Balance",fmtM(sr.balance||0))+frow("Status",chip(sr.status))+'</div></div></div>':"")
+    +'<div class="card"><div class="card-title">Fee History</div><div id="l-fee-hist"></div><button class="btn-sm btn-gray" onclick="loadFeeHistory(\''+m.id+'\',\'library\',\'l-fee-hist\')">Load</button></div>'
   );
 }
 
-// ── LEAVE ─────────────────────────────────────────────────────
-function renderLeave(){
-  var active=S.students.filter(function(s){return !s.exit_date;});
-  var curLeaves=S.leaves.filter(function(l){return l.is_current;});
-  var html='<div class="g2">'
-    +'<div class="card"><div class="card-title">👥 Grant Leave to Student</div>'
-    +'<div style="margin-bottom:10px"><input class="search-inp" id="leave-search" placeholder="Search student…" oninput="filterLeaveStudents()" style="width:100%"/></div>'
-    +'<div id="leave-student-list" style="max-height:320px;overflow-y:auto"></div></div>'
-    +'<div class="card"><div class="card-title">📋 Currently on Leave ('+curLeaves.length+')</div>'
-    +(curLeaves.length?curLeaves.map(function(l){return'<div class="leave-cur"><div><div style="font-weight:700;font-size:13px">'+l.student_name+'</div><div style="font-size:11px;color:#64748b">'+fmtDate(l.from_date)+' → '+fmtDate(l.to_date)+'</div><div style="font-size:11px">'+fmt(l.reason)+'</div></div><button class="btn-outline" onclick="doEndLeave(\''+l.id+'\')">End Leave</button></div>';}).join(""):'<div class="empty">No active leaves</div>')
-    +'</div></div>';
-  setContent(html);
-  filterLeaveStudents();
+// ═══ MESS MEMBERS ═══
+function renderMess(){
+  var active=S.messMembers.filter(function(m){return !m.exit_date;});
+  var html='<div class="search-bar">'
+    +'<input class="search-inp" id="ms-search" placeholder="🔍 Search mess members…" oninput="filterMess()"/>'
+    +'<select class="filter-sel" id="ms-plan-filter" onchange="filterMess()"><option value="all">All Plans</option><option value="veg">🥦 Veg</option><option value="nonveg">🍗 Non-Veg</option><option value="both">🍽️ Both</option></select>'
+    +'</div><div id="ms-count" class="result-count"></div><div id="ms-grid" class="s-grid"></div>';
+  setContent(html);filterMess();
+}
+function filterMess(){
+  var q=(document.getElementById("ms-search")||{value:""}).value.toLowerCase().trim();
+  var pF=(document.getElementById("ms-plan-filter")||{value:"all"}).value;
+  var list=S.messMembers.filter(function(m){
+    if(m.exit_date)return false;
+    if(pF!=="all"&&m.meal_plan!==pF)return false;
+    if(q){var hay=[m.name,m.phone,m.meal_plan].join(" ").toLowerCase();if(!hay.includes(q))return false;}
+    return true;
+  });
+  var rc=document.getElementById("ms-count");if(rc)rc.textContent=list.length+" member"+(list.length!==1?"s":"");
+  var grid=document.getElementById("ms-grid");if(!grid)return;
+  if(!list.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1">No mess members found</div>';return;}
+  grid.innerHTML=list.map(function(m){
+    var sr=S.monthSummary.mess.find(function(x){return String(x.memberId)===String(m.id);});
+    var st=sr?sr.status:"—";var bal=sr?Number(sr.balance||0):0;
+    var planIcon=m.meal_plan==="veg"?"🥦":m.meal_plan==="nonveg"?"🍗":"🍽️";
+    var linked=m.linked_hostel_id?S.students.find(function(s){return String(s.id)===String(m.linked_hostel_id);}):null;
+    return'<div class="s-card mess" onclick="openMessDetail(\''+m.id+'\')"><div class="s-card-top">'+av(m.name,38,"#e65100")+'<div><div class="s-card-name">'+m.name+'</div><div class="s-card-sub">'+planIcon+' '+fmt(m.meal_plan)+(linked?" · 🏠 "+linked.name:"")+'</div></div></div>'
+      +'<div class="s-card-bot"><div class="s-card-meta">'+fmtM(m.monthly_fee_amount)+'/mo</div>'+(st!=="—"?chip(st)+(bal>0?'<span class="bal-badge">₹'+bal.toLocaleString("en-IN")+'</span>':""):"")+'</div></div>';
+  }).join("");
+}
+function openMessDetail(id){S.selected=id;S.tab="mess";renderMessDetailView(id);}
+function renderMessDetailView(id){
+  var m=S.messMembers.find(function(x){return String(x.id)===String(id);});if(!m){go("mess");return;}
+  var sr=S.monthSummary.mess.find(function(x){return String(x.memberId)===String(id);});
+  var linked=m.linked_hostel_id?S.students.find(function(s){return String(s.id)===String(m.linked_hostel_id);}):null;
+  var mn=MONTHS[S.curMonth-1]+" "+S.curYear;
+  setContent(
+    '<button class="back-btn" onclick="S.selected=null;renderMess()">← Back</button>'
+    +'<div class="card"><div class="profile-top">'+av(m.name,52,"#e65100")
+    +'<div><div class="profile-name">'+m.name+'</div><div class="profile-sub">🍽️ '+fmt(m.meal_plan)+(linked?" · Linked: "+linked.name:"")+'</div></div></div>'
+    +'<div class="detail-grid"><div>'+frow("📞 Phone",fmt(m.phone))+frow("📧 Email",fmt(m.email))+frow("📅 Joined",fmtDate(m.joining_date))+'</div>'
+    +'<div>'+frow("💰 Fee",fmtM(m.monthly_fee_amount))+frow("📆 Due Day",dueDayLabel(m))+frow("📝 Notes",fmt(m.notes))+'</div></div></div>'
+    +(sr&&canEdit()?'<div class="card"><div class="card-header"><div class="card-title" style="margin:0">₹ '+mn+'</div><div style="display:flex;gap:6px">'
+      +(sr.status!=="paid"?'<button class="btn-sm btn-pay mess" onclick="openPayModal(\''+sr.id+'\',\'mess\',\''+m.id+'\',\''+mn+'\')">💳 Pay</button>':"")
+      +'</div></div>'
+      +'<div class="g2" style="margin:0"><div>'+frow("Net",fmtM(sr.net))+frow("Paid",fmtM(sr.paid||0))+'</div><div>'+frow("Balance",fmtM(sr.balance||0))+frow("Status",chip(sr.status))+'</div></div></div>':"")
+    +'<div class="card"><div class="card-title">Fee History</div><div id="ms-fee-hist"></div><button class="btn-sm btn-gray" onclick="loadFeeHistory(\''+m.id+'\',\'mess\',\'ms-fee-hist\')">Load</button></div>'
+  );
 }
 
+// ═══ MESS ATTENDANCE ═══
+function renderMessAttendance(){
+  var dt=today();
+  var active=S.messMembers.filter(function(m){return !m.exit_date;});
+  setContent(
+    '<div class="card"><div class="card-header"><div class="card-title" style="margin:0">📊 Daily Mess Attendance</div>'
+    +'<div style="display:flex;gap:8px;align-items:center"><input class="finp" type="date" id="att-date" value="'+dt+'" style="width:160px" onchange="loadAttendance()"/>'
+    +(canEdit()?'<button class="btn-primary mess" onclick="saveAttendance()">Save Attendance</button>':'')
+    +'</div></div>'
+    +'<div id="att-list" style="max-height:500px;overflow-y:auto"></div></div>'
+  );
+  loadAttendance();
+}
+async function loadAttendance(){
+  var dt=v("att-date")||today();
+  var el=document.getElementById("att-list");
+  el.innerHTML='<div class="empty">Loading…</div>';
+  var res=await sb.from("mess_attendance").select("*").eq("att_date",dt);
+  var existing={};(res.data||[]).forEach(function(a){existing[a.member_id]=a;});
+  var active=S.messMembers.filter(function(m){return !m.exit_date;});
+  var presentCount=Object.values(existing).filter(function(a){return a.present;}).length;
+  el.innerHTML='<div style="font-size:12px;color:#64748b;margin-bottom:10px">'+presentCount+' / '+active.length+' present</div>'
+    +active.map(function(m){
+    var att=existing[m.id];
+    var checked=att?att.present:true;
+    return'<div class="bulk-row"><input type="checkbox" class="att-chk" data-id="'+m.id+'" '+(checked?"checked":"")+(canEdit()?'':' disabled')+'/>'
+      +av(m.name,28,"#e65100")
+      +'<div style="flex:1;font-size:13px;font-weight:600">'+m.name+'</div>'
+      +'<div style="font-size:11px;color:#64748b">'+(m.meal_plan==="veg"?"🥦":m.meal_plan==="nonveg"?"🍗":"🍽️")+'</div></div>';
+  }).join("");
+}
+async function saveAttendance(){
+  var dt=v("att-date")||today();
+  var checks=document.querySelectorAll(".att-chk");
+  toast("Saving…");
+  for(var i=0;i<checks.length;i++){
+    var mid=checks[i].dataset.id;
+    var present=checks[i].checked;
+    var mm=S.messMembers.find(function(m){return String(m.id)===String(mid);});
+    var res=await sb.from("mess_attendance").select("id").eq("member_id",mid).eq("att_date",dt).maybeSingle();
+    if(res.data){await sb.from("mess_attendance").update({present:present}).eq("id",res.data.id);}
+    else{await sb.from("mess_attendance").insert({id:uid("ATT"),member_id:mid,member_name:mm?mm.name:"",att_date:dt,present:present});}
+  }
+  toast("Attendance saved ✓","ok");
+}
+
+// ═══ COMPLAINTS ═══
+function renderComplaints(){
+  var open=S.complaints.filter(function(c){return c.status==="open";});
+  var inprog=S.complaints.filter(function(c){return c.status==="inprogress";});
+  var resolved=S.complaints.filter(function(c){return c.status==="resolved";});
+  setContent(
+    '<div class="stats-grid">'
+    +sc("Open",open.length,"Needs attention","📋","#c62828")
+    +sc("In Progress",inprog.length,"Being worked on","⚡","#e65100")
+    +sc("Resolved",resolved.length,"Completed","✅","#43a047")
+    +sc("Total",S.complaints.length,"All tickets","🎫","#1565c0")
+    +'</div>'
+    +'<div id="comp-list">'
+    +S.complaints.slice(0,30).map(function(c){
+      return'<div class="ticket-row">'
+        +'<div style="flex:1"><div style="font-weight:700;font-size:14px">'+c.subject+'</div>'
+        +'<div style="font-size:11px;color:#64748b;margin-top:3px">'+(c.student_name||"External")+(c.hostel_name?" · "+c.hostel_name:"")+(c.room?" · Room "+c.room:"")+" · "+fmtDate(c.created_at)+'</div></div>'
+        +chip(c.status)+priorityChip(c.priority)
+        +(canEdit()&&c.status!=="resolved"?'<select class="filter-sel" style="font-size:11px" onchange="updateTicket(\''+c.id+'\',this.value)"><option value="open"'+(c.status==="open"?" selected":"")+'>Open</option><option value="inprogress"'+(c.status==="inprogress"?" selected":"")+'>In Progress</option><option value="resolved">Resolved</option></select>':'')
+        +'</div>';
+    }).join("")
+    +'</div>'
+  );
+}
+async function submitComplaint(){
+  var subject=v("comp-subject");if(!subject){toast("Subject required","err");return;}
+  var studentId=v("comp-student");
+  var student=studentId?S.students.find(function(s){return String(s.id)===String(studentId);}):null;
+  await sb.from("complaints").insert({
+    id:uid("CMP"),student_id:studentId||null,student_name:student?student.name:"",
+    hostel_name:v("comp-hostel"),room:v("comp-room"),category:v("comp-cat"),
+    priority:v("comp-priority"),subject:subject,description:document.getElementById("comp-desc").value.trim(),status:"open"
+  });
+  closeM("m-complaint");toast("Complaint submitted ✓");loadData();
+}
+async function updateTicket(id,status){
+  await sb.from("complaints").update({status:status,resolved_at:status==="resolved"?today():null}).eq("id",id);
+  toast("Ticket updated ✓");loadData();
+}
+
+// ═══ EXPENSES ═══
+function renderExpenses(){
+  var monthExp=S.expenses.filter(function(e){
+    if(!e.expense_date)return false;
+    var d=new Date(e.expense_date);return d.getMonth()+1===S.curMonth&&d.getFullYear()===S.curYear;
+  });
+  var total=monthExp.reduce(function(a,e){return a+Number(e.amount||0);},0);
+  var catTotals={};monthExp.forEach(function(e){catTotals[e.category||"Other"]=(catTotals[e.category||"Other"]||0)+Number(e.amount||0);});
+  var mn=MONTHS[S.curMonth-1]+" "+S.curYear;
+
+  setContent(
+    '<div class="stats-grid">'
+    +sc("Total — "+mn,fmtM(total),monthExp.length+" expenses","💸","#6a1b9a")
+    +Object.entries(catTotals).slice(0,3).map(function(e){return sc(e[0],fmtM(e[1]),"","📊","#475569");}).join("")
+    +'</div>'
+    +'<div class="card"><div class="card-title">Recent Expenses</div>'
+    +(S.expenses.length?S.expenses.slice(0,30).map(function(e){
+      return'<div class="expense-row">'
+        +'<div style="width:80px;font-size:11px;color:#64748b">'+fmtDate(e.expense_date)+'</div>'
+        +'<div style="flex:1"><div style="font-weight:600">'+fmt(e.description)+'</div>'
+        +'<div style="font-size:11px;color:#94a3b8">'+(e.category||"")+(e.hostel_name?" · "+e.hostel_name:"")+(e.paid_to?" · "+e.paid_to:"")+'</div></div>'
+        +'<div style="font-weight:800;color:#6a1b9a;font-size:14px">'+fmtM(e.amount)+'</div></div>';
+    }).join(""):'<div class="empty">No expenses yet</div>')
+    +'</div>'
+  );
+}
+async function submitExpense(){
+  var desc=v("exp-desc"),amount=Number(v("exp-amount"));
+  if(!desc||!amount){toast("Fill description and amount","err");return;}
+  await sb.from("expenses").insert({
+    id:uid("EXP"),expense_date:v("exp-date")||today(),category:v("exp-cat"),
+    hostel_name:v("exp-hostel"),description:desc,amount:amount,
+    paid_to:v("exp-to"),mode:v("exp-mode")
+  });
+  closeM("m-expense");toast("Expense added ✓");loadData();
+}
+
+// ═══ OCCUPANCY DASHBOARD ═══
+function renderOccupancy(){
+  var hostelNames=getHostelNames();
+  if(!hostelNames.length){
+    setContent('<div class="card"><div class="card-title">🏢 Occupancy Dashboard</div><div class="empty">No hostels configured. Go to Settings → Manage Hostels to add your hostel buildings.</div></div>');
+    return;
+  }
+  var active=S.students.filter(function(s){return !s.exit_date;});
+  var onLeaveIds=S.leaves.filter(function(l){return l.is_current;}).map(function(l){return l.student_id;});
+
+  var html='<div class="stats-grid">';
+  var totalOccupied=0,totalRooms=0;
+  hostelNames.forEach(function(h){
+    var occupants=active.filter(function(s){return s.hostel_name===h;});
+    totalOccupied+=occupants.length;
+  });
+  html+=sc("Total Occupants",totalOccupied,active.length+" total active students","👥","#1565c0");
+  html+=sc("On Leave",onLeaveIds.length,"Currently away","📋","#f57f17");
+  html+=sc("Hostels",hostelNames.length,"Buildings managed","🏢","#2e7d32");
+  html+='</div>';
+
+  hostelNames.forEach(function(h){
+    var occupants=active.filter(function(s){return s.hostel_name===h;});
+    var rooms={};
+    occupants.forEach(function(s){
+      if(s.room){
+        if(!rooms[s.room])rooms[s.room]={students:[],onLeave:false};
+        rooms[s.room].students.push(s);
+        if(onLeaveIds.indexOf(s.id)!==-1)rooms[s.room].onLeave=true;
+      }
+    });
+    var roomKeys=Object.keys(rooms).sort();
+    html+='<div class="card"><div class="card-header"><div class="card-title" style="margin:0">🏢 '+h+' ('+occupants.length+' occupants)</div></div>';
+    if(roomKeys.length){
+      html+='<div class="room-grid">';
+      roomKeys.forEach(function(r){
+        var rm=rooms[r];
+        var cls=rm.onLeave?"onleave":"occupied";
+        var names=rm.students.map(function(s){return s.name;}).join(", ");
+        html+='<div class="room-cell '+cls+'" title="'+names+'"><div style="font-size:13px">'+r+'</div><div style="font-size:9px;margin-top:2px">'+rm.students.length+' 👤</div></div>';
+      });
+      html+='</div>';
+    } else {
+      html+='<div class="empty">No rooms assigned for this hostel</div>';
+    }
+    html+='<div style="display:flex;gap:12px;margin-top:10px;font-size:11px">'
+      +'<span><span class="room-cell occupied" style="display:inline-block;padding:2px 8px;font-size:10px">■</span> Occupied</span>'
+      +'<span><span class="room-cell onleave" style="display:inline-block;padding:2px 8px;font-size:10px">■</span> On Leave</span>'
+      +'</div></div>';
+  });
+
+  setContent(html);
+}
+
+// ═══ LEAVE ═══
+function renderLeave(){
+  var curLeaves=S.leaves.filter(function(l){return l.is_current;});
+  var html='<div class="g2">'
+    +'<div class="card"><div class="card-title">👥 Grant Leave</div>'
+    +'<input class="search-inp" id="leave-search" placeholder="Search student…" oninput="filterLeaveStudents()" style="width:100%;margin-bottom:10px"/>'
+    +'<div id="leave-student-list" style="max-height:320px;overflow-y:auto"></div></div>'
+    +'<div class="card"><div class="card-title">📋 On Leave ('+curLeaves.length+')</div>'
+    +(curLeaves.length?curLeaves.map(function(l){return'<div class="leave-cur"><div><div style="font-weight:700;font-size:13px">'+l.student_name+'</div><div style="font-size:11px;color:#64748b">'+fmtDate(l.from_date)+' → '+fmtDate(l.to_date)+'</div></div>'+(canEdit()?'<button class="btn-outline" onclick="doEndLeave(\''+l.id+'\')">End</button>':'')+'</div>';}).join(""):'<div class="empty">No active leaves</div>')
+    +'</div></div>';
+  setContent(html);filterLeaveStudents();
+}
 function filterLeaveStudents(){
   var q=(document.getElementById("leave-search")||{value:""}).value.toLowerCase();
   var list=S.students.filter(function(s){return !s.exit_date&&(!q||s.name.toLowerCase().includes(q));}).slice(0,20);
   var el=document.getElementById("leave-student-list");if(!el)return;
   el.innerHTML=list.map(function(s){
     var onLeave=S.leaves.find(function(l){return String(l.student_id)===String(s.id)&&l.is_current;});
-    return'<div class="bulk-row">'+av(s.name,28)+'<div style="flex:1;font-size:13px;font-weight:600">'+s.name+(s.room?' <span style="color:#94a3b8;font-weight:400;font-size:11px">'+s.room+'</span>':'')+'</div>'
-      +(onLeave?'<span class="chip chip-pending">On Leave</span>':'<button class="btn-sm btn-yellow" onclick="openLeaveModal(\''+s.id+'\',\''+s.name.replace(/'/g,"")+'\')">+ Grant</button>')+'</div>';
+    return'<div class="bulk-row">'+av(s.name,28)+'<div style="flex:1;font-size:13px;font-weight:600">'+s.name+'</div>'
+      +(onLeave?'<span class="chip chip-pending">On Leave</span>':(canEdit()?'<button class="btn-sm btn-yellow" onclick="openLeaveModal(\''+s.id+'\',\''+s.name.replace(/'/g,"")+'\')">+ Grant</button>':''))+'</div>';
   }).join("");
 }
-
-function openLeaveModal(sid,sname){setV("leave-student-id",sid);setV("leave-student-name",sname);document.getElementById("leave-sub").textContent="Student: "+sname;setV("leave-from","");setV("leave-to","");document.getElementById("leave-reason").value="";openM("m-leave");}
+function openLeaveModal(sid,sname){setV("leave-student-id",sid);setV("leave-student-name",sname);document.getElementById("leave-sub").textContent=sname;openM("m-leave");}
 async function submitLeave(){
-  var sid=v("leave-student-id"),sname=v("leave-student-name"),from=v("leave-from"),to=v("leave-to"),reason=document.getElementById("leave-reason").value.trim();
-  if(!from||!to){toast("Enter from and to dates","err");return;}
-  // End any current leave
+  var sid=v("leave-student-id"),sname=v("leave-student-name"),from=v("leave-from"),to=v("leave-to");
+  if(!from||!to){toast("Enter dates","err");return;}
   await sb.from("leaves").update({is_current:false,status:"ended"}).eq("student_id",sid).eq("is_current",true);
-  await sb.from("leaves").insert({id:uid("L"),student_id:sid,student_name:sname,from_date:from,to_date:to,reason:reason,status:"approved",is_current:true});
+  await sb.from("leaves").insert({id:uid("L"),student_id:sid,student_name:sname,from_date:from,to_date:to,reason:document.getElementById("leave-reason").value.trim(),status:"approved",is_current:true});
   closeM("m-leave");toast("Leave granted ✓");loadData();
 }
 async function doEndLeave(lid){
@@ -1074,47 +1549,41 @@ async function doEndLeave(lid){
   toast("Leave ended ✓");loadData();
 }
 
-// ── CRUD: STUDENTS ────────────────────────────────────────────
+// ═══ CRUD: STUDENTS ═══
 async function submitAddStudent(){
-  if(!v("as-name")){toast("Name is required","err");return;}
-  if(!v("as-fee")){toast("Monthly fee is required","err");return;}
+  if(!v("as-name")){toast("Name required","err");return;}
+  if(!v("as-fee")){toast("Fee required","err");return;}
   var btn=document.getElementById("btn-add-s");btn.disabled=true;btn.textContent="Adding…";
   var id=uid("S");
-  var d={id:id,name:v("as-name"),room:v("as-room"),course:v("as-course"),phone:v("as-phone"),email:v("as-email"),dob:v("as-dob")||null,joining_date:v("as-join")||null,monthly_fee_amount:Number(v("as-fee"))||0,fee_day:parseInt(v("as-feeday"))||1,override_due_date:parseInt(v("as-override-due"))||null,discount:Number(v("as-discount"))||0,notes:v("as-notes")};
+  var d={id:id,name:v("as-name"),hostel_name:v("as-hostel"),room:v("as-room"),course:v("as-course"),phone:v("as-phone"),email:v("as-email"),dob:v("as-dob")||null,joining_date:v("as-join")||null,monthly_fee_amount:Number(v("as-fee"))||0,fee_day:parseInt(v("as-feeday"))||1,override_due_date:parseInt(v("as-override-due"))||null,discount:Number(v("as-discount"))||0,notes:v("as-notes")};
   try{
     await sb.from("hostel_students").insert(d);
     var m=S.curMonth,y=S.curYear,net=Math.max(0,d.monthly_fee_amount-d.discount);
     await sb.from("monthly_fees").insert({id:uid("HF"),student_id:id,student_name:d.name,month:m,year:y,due_date:computeDueDate(d,m,y),total_amount:d.monthly_fee_amount,discount:d.discount,net_amount:net,paid_amount:0,balance:net,status:"pending"});
-    btn.disabled=false;btn.textContent="Add Student";closeM("m-add-student");toast("Student added ✓");
-    ["as-name","as-room","as-course","as-phone","as-email","as-dob","as-join","as-fee","as-feeday","as-override-due","as-discount","as-notes"].forEach(function(i){setV(i,"");});
-    loadData();
+    btn.disabled=false;btn.textContent="Add Student";closeM("m-add-student");toast("Student added ✓");loadData();
   }catch(e){btn.disabled=false;btn.textContent="Add Student";toast(e.message,"err");}
 }
-
 function openEditStudent(id){
   var s=S.students.find(function(x){return String(x.id)===String(id);});if(!s)return;
-  document.getElementById("edit-s-sub").textContent="Editing: "+s.name;
+  document.getElementById("edit-s-sub").textContent=s.name;
   setV("edit-s-id",id);setV("es-name",s.name);setV("es-room",s.room);setV("es-course",s.course);
   setV("es-phone",s.phone);setV("es-email",s.email);setV("es-dob",s.dob);
   setV("es-join",s.joining_date);setV("es-exit",s.exit_date);
   setV("es-fee",s.monthly_fee_amount);setV("es-feeday",s.fee_day);
   setV("es-override-due",s.override_due_date);setV("es-discount",s.discount);setV("es-notes",s.notes);
+  populateHostelSelect("es-hostel");setV("es-hostel",s.hostel_name);
   openM("m-edit-student");
 }
 async function submitEditStudent(){
   var id=v("edit-s-id");if(!v("es-name")){toast("Name required","err");return;}
   var btn=document.getElementById("btn-edit-s");btn.disabled=true;btn.textContent="Saving…";
-  var upd={name:v("es-name"),room:v("es-room"),course:v("es-course"),phone:v("es-phone"),email:v("es-email"),dob:v("es-dob")||null,joining_date:v("es-join")||null,exit_date:v("es-exit")||null,monthly_fee_amount:Number(v("es-fee"))||0,fee_day:parseInt(v("es-feeday"))||null,override_due_date:parseInt(v("es-override-due"))||null,discount:Number(v("es-discount"))||0,notes:v("es-notes")};
+  var upd={name:v("es-name"),hostel_name:v("es-hostel"),room:v("es-room"),course:v("es-course"),phone:v("es-phone"),email:v("es-email"),dob:v("es-dob")||null,joining_date:v("es-join")||null,exit_date:v("es-exit")||null,monthly_fee_amount:Number(v("es-fee"))||0,fee_day:parseInt(v("es-feeday"))||null,override_due_date:parseInt(v("es-override-due"))||null,discount:Number(v("es-discount"))||0,notes:v("es-notes")};
   try{await sb.from("hostel_students").update(upd).eq("id",id);btn.disabled=false;btn.textContent="Save Changes";closeM("m-edit-student");toast("Saved ✓");loadData();}
   catch(e){btn.disabled=false;btn.textContent="Save Changes";toast(e.message,"err");}
 }
-async function doHostelExit(id){
-  if(!confirm("Mark as exited today?"))return;
-  await sb.from("hostel_students").update({exit_date:today()}).eq("id",id);
-  toast("Exit recorded");loadData();
-}
+async function doHostelExit(id){if(!confirm("Mark as exited?"))return;await sb.from("hostel_students").update({exit_date:today()}).eq("id",id);toast("Exit recorded");loadData();}
 
-// ── CRUD: LIBRARY ─────────────────────────────────────────────
+// ═══ CRUD: LIBRARY ═══
 async function submitAddLibMember(){
   if(!v("al-name")){toast("Name required","err");return;}
   var btn=document.getElementById("btn-add-lib");btn.disabled=true;btn.textContent="Adding…";
@@ -1124,14 +1593,12 @@ async function submitAddLibMember(){
     await sb.from("library_members").insert(d);
     var m=S.curMonth,y=S.curYear,net=Math.max(0,d.monthly_fee_amount-d.discount);
     await sb.from("library_fees").insert({id:uid("LF"),member_id:id,member_name:d.name,month:m,year:y,due_date:computeDueDate(d,m,y),total_amount:d.monthly_fee_amount,discount:d.discount,net_amount:net,paid_amount:0,balance:net,status:"pending"});
-    btn.disabled=false;btn.textContent="Add Member";closeM("m-add-lib");toast("Member added ✓","lib");
-    ["al-name","al-seat","al-course","al-phone","al-email","al-dob","al-join","al-fee","al-feeday","al-override-due","al-discount","al-notes"].forEach(function(i){setV(i,"");});
-    loadData();
+    btn.disabled=false;btn.textContent="Add Member";closeM("m-add-lib");toast("Added ✓","lib");loadData();
   }catch(e){btn.disabled=false;btn.textContent="Add Member";toast(e.message,"err");}
 }
 function openEditLibMember(id){
   var m=S.libMembers.find(function(x){return String(x.id)===String(id);});if(!m)return;
-  document.getElementById("edit-l-sub").textContent="Editing: "+m.name;
+  document.getElementById("edit-l-sub").textContent=m.name;
   setV("edit-l-id",id);setV("el-name",m.name);setV("el-seat",m.seat_number);setV("el-course",m.course);
   setV("el-phone",m.phone);setV("el-email",m.email);setV("el-dob",m.dob);
   setV("el-join",m.joining_date);setV("el-exit",m.exit_date);
@@ -1141,46 +1608,61 @@ function openEditLibMember(id){
 }
 async function submitEditLibMember(){
   var id=v("edit-l-id");if(!v("el-name")){toast("Name required","err");return;}
-  var btn=document.getElementById("btn-edit-lib");btn.disabled=true;btn.textContent="Saving…";
+  var btn=document.getElementById("btn-edit-lib");btn.disabled=true;
   var upd={name:v("el-name"),seat_number:v("el-seat"),course:v("el-course"),phone:v("el-phone"),email:v("el-email"),dob:v("el-dob")||null,joining_date:v("el-join")||null,exit_date:v("el-exit")||null,monthly_fee_amount:Number(v("el-fee"))||0,fee_day:parseInt(v("el-feeday"))||null,override_due_date:parseInt(v("el-override-due"))||null,discount:Number(v("el-discount"))||0,notes:v("el-notes")};
-  try{await sb.from("library_members").update(upd).eq("id",id);btn.disabled=false;btn.textContent="Save Changes";closeM("m-edit-lib");toast("Saved ✓","lib");loadData();}
-  catch(e){btn.disabled=false;btn.textContent="Save Changes";toast(e.message,"err");}
-}
-async function doLibExit(id){
-  if(!confirm("Mark as exited?"))return;
-  await sb.from("library_members").update({exit_date:today()}).eq("id",id);
-  toast("Exit recorded","lib");loadData();
+  try{await sb.from("library_members").update(upd).eq("id",id);btn.disabled=false;btn.textContent="Save";closeM("m-edit-lib");toast("Saved ✓","lib");loadData();}
+  catch(e){btn.disabled=false;btn.textContent="Save";toast(e.message,"err");}
 }
 async function doLinkLibrary(hostelId){
-  if(!confirm("Enroll this student as a library member?"))return;
+  if(!confirm("Enroll as library member?"))return;
   var s=S.students.find(function(x){return String(x.id)===String(hostelId);});if(!s)return;
-  var ex=S.libMembers.find(function(m){return String(m.linked_hostel_id)===String(hostelId)&&!m.exit_date;});
-  if(ex){toast("Already a library member","err");return;}
   var id=uid("LM");
-  await sb.from("library_members").insert({id:id,name:s.name,phone:s.phone,email:s.email,course:s.course,joining_date:today(),monthly_fee_amount:0,fee_day:s.fee_day||1,discount:0,linked_hostel_id:hostelId,notes:"Enrolled from Hostel"});
-  toast("Enrolled in library ✓","lib");loadData();
+  await sb.from("library_members").insert({id:id,name:s.name,phone:s.phone,email:s.email,course:s.course,joining_date:today(),monthly_fee_amount:0,fee_day:s.fee_day||1,discount:0,linked_hostel_id:hostelId,notes:"From Hostel"});
+  toast("Library enrolled ✓","lib");loadData();
+}
+async function doLinkMess(hostelId){
+  if(!confirm("Enroll as mess member?"))return;
+  var s=S.students.find(function(x){return String(x.id)===String(hostelId);});if(!s)return;
+  var id=uid("MM");
+  await sb.from("mess_members").insert({id:id,name:s.name,phone:s.phone,email:s.email,meal_plan:"veg",joining_date:today(),monthly_fee_amount:0,fee_day:s.fee_day||1,discount:0,linked_hostel_id:hostelId,notes:"From Hostel"});
+  toast("Mess enrolled ✓","mess");loadData();
 }
 
-// ── DELETE ────────────────────────────────────────────────────
-function openDelete(id,module,name){setV("del-id",id);setV("del-module",module);document.getElementById("del-sub").textContent='Delete "'+name+'" from '+module+'?';openM("m-delete");}
+// ═══ CRUD: MESS ═══
+async function submitAddMessMember(){
+  if(!v("am-name")){toast("Name required","err");return;}
+  var btn=document.getElementById("btn-add-mess");btn.disabled=true;btn.textContent="Adding…";
+  var id=uid("MM");
+  var d={id:id,name:v("am-name"),meal_plan:v("am-plan"),linked_hostel_id:v("am-link")||null,phone:v("am-phone"),email:v("am-email"),joining_date:v("am-join")||null,monthly_fee_amount:Number(v("am-fee"))||0,fee_day:parseInt(v("am-feeday"))||1,discount:Number(v("am-discount"))||0,notes:v("am-notes")};
+  try{
+    await sb.from("mess_members").insert(d);
+    var m=S.curMonth,y=S.curYear,net=Math.max(0,d.monthly_fee_amount-d.discount);
+    if(net>0)await sb.from("mess_fees").insert({id:uid("MF"),member_id:id,member_name:d.name,month:m,year:y,due_date:computeDueDate(d,m,y),total_amount:d.monthly_fee_amount,discount:d.discount,net_amount:net,paid_amount:0,balance:net,status:"pending"});
+    btn.disabled=false;btn.textContent="Add Member";closeM("m-add-mess");toast("Mess member added ✓","mess");loadData();
+  }catch(e){btn.disabled=false;btn.textContent="Add Member";toast(e.message,"err");}
+}
+
+// ═══ DELETE ═══
+function openDelete(id,module,name){setV("del-id",id);setV("del-module",module);document.getElementById("del-sub").textContent='Delete "'+name+'"?';openM("m-delete");}
 async function confirmDelete(){
   var id=v("del-id"),module=v("del-module");
-  var table=module==="library"?"library_members":"hostel_students";
-  var item=(module==="library"?S.libMembers:S.students).find(function(x){return String(x.id)===String(id);});
+  var table=module==="library"?"library_members":module==="mess"?"mess_members":"hostel_students";
+  var list=module==="library"?S.libMembers:module==="mess"?S.messMembers:S.students;
+  var item=list.find(function(x){return String(x.id)===String(id);});
   await sb.from("deleted_records").insert({deleted_at:today(),module:module,original_id:id,name:item?item.name:"",data:JSON.stringify(item||{})});
   await sb.from(table).delete().eq("id",id);
-  closeM("m-delete");toast("Deleted & archived");S.selected=null;loadData();
+  closeM("m-delete");toast("Deleted");S.selected=null;loadData();
 }
 
-// ── WHATSAPP ──────────────────────────────────────────────────
+// ═══ WHATSAPP ═══
 function openWA(module,studentId,month,year){
-  var list=module==="library"?S.libMembers:S.students;
+  var list=module==="library"?S.libMembers:module==="mess"?S.messMembers:S.students;
   var item=list.find(function(x){return String(x.id)===String(studentId);});if(!item){toast("Not found","err");return;}
-  var ms=module==="library"?S.monthSummary.library:S.monthSummary.hostel;
+  var ms=module==="library"?S.monthSummary.library:module==="mess"?S.monthSummary.mess:S.monthSummary.hostel;
   var fee=ms.find(function(x){return String(x.studentId||x.memberId)===String(studentId);});
   var net=Number(item.monthly_fee_amount||0),bal=fee?Number(fee.balance||0):net,due=fee?fee.dueDate:"";
   var tmpl=(S.settings&&S.settings.wa_template)||"Dear {name}, your fee Rs.{net} for {month}/{year} is due on {dueDate}. Balance: Rs.{balance}.";
-  var msg=tmpl.replace(/{name}/g,item.name).replace(/{net}/g,net).replace(/{month}/g,month).replace(/{year}/g,year).replace(/{dueDate}/g,due).replace(/{balance}/g,bal).replace(/{amount}/g,net);
+  var msg=tmpl.replace(/{name}/g,item.name).replace(/{net}/g,net).replace(/{month}/g,month).replace(/{year}/g,year).replace(/{dueDate}/g,due).replace(/{balance}/g,bal);
   var phone=String(item.phone||"").replace(/\D/g,"");
   document.getElementById("wa-name").textContent=item.name;
   document.getElementById("wa-phone").textContent="+"+phone;
@@ -1189,247 +1671,186 @@ function openWA(module,studentId,month,year){
   openM("m-wa");
 }
 
-// ── ADVANCE ──────────────────────────────────────────────────
+// ═══ ADVANCE ═══
 function openAdvance(sid,module,sname){setV("adv-student-id",sid);setV("adv-module",module);document.getElementById("adv-sub").textContent=sname;openM("m-advance");}
 async function submitAdvance(){
   var sid=v("adv-student-id"),module=v("adv-module"),n=parseInt(v("adv-months"))||1;
-  var list=module==="library"?S.libMembers:S.students;
-  var item=list.find(function(x){return String(x.id)===String(sid);});if(!item){toast("Not found","err");return;}
-  var table=module==="library"?"library_fees":"monthly_fees";
-  var idField=module==="library"?"member_id":"student_id";
+  var list=module==="library"?S.libMembers:module==="mess"?S.messMembers:S.students;
+  var item=list.find(function(x){return String(x.id)===String(sid);});if(!item)return;
+  var table=module==="library"?"library_fees":module==="mess"?"mess_fees":"monthly_fees";
+  var idField=module==="library"||module==="mess"?"member_id":"student_id";
+  var nameField=module==="library"||module==="mess"?"member_name":"student_name";
   var m=S.curMonth,y=S.curYear;
   for(var i=0;i<n;i++){
     var net=Math.max(0,Number(item.monthly_fee_amount||0)-Number(item.discount||0));
     var res=await sb.from(table).select("id").eq(idField,sid).eq("month",m).eq("year",y).maybeSingle();
     if(res.data){await sb.from(table).update({paid_amount:net,balance:0,status:"paid",mode:"advance"}).eq("id",res.data.id);}
-    else{var nf={id:uid(module==="library"?"LF":"HF"),month:m,year:y,due_date:computeDueDate(item,m,y),total_amount:Number(item.monthly_fee_amount||0),discount:Number(item.discount||0),net_amount:net,paid_amount:net,balance:0,status:"paid",mode:"advance"};nf[idField]=sid;nf[module==="library"?"member_name":"student_name"]=item.name;await sb.from(table).insert(nf);}
+    else{var nf={id:uid("F"),month:m,year:y,due_date:computeDueDate(item,m,y),total_amount:Number(item.monthly_fee_amount||0),discount:Number(item.discount||0),net_amount:net,paid_amount:net,balance:0,status:"paid",mode:"advance"};nf[idField]=sid;nf[nameField]=item.name;await sb.from(table).insert(nf);}
     var nx=nextMY(m,y);m=nx.m;y=nx.y;
   }
-  closeM("m-advance");toast("Advance paid for "+n+" month"+(n>1?"s":"")+" ✓","ok");loadData();
+  closeM("m-advance");toast(n+" month"+(n>1?"s":"")+" paid ✓","ok");loadData();
 }
 
-// ── RECEIPT ───────────────────────────────────────────────────
+// ═══ RECEIPT ═══
 async function doReceipt(module,feeId,studentId){
-  var table=module==="library"?"library_fees":"monthly_fees";
+  var table=module==="library"?"library_fees":module==="mess"?"mess_fees":"monthly_fees";
   var res=await sb.from(table).select("*").eq("id",feeId).single();
-  var fee=res.data;if(!fee){toast("Fee record not found","err");return;}
-  var list=module==="library"?S.libMembers:S.students;
-  var item=list.find(function(x){return String(x.id)===String(studentId);});if(!item){toast("Student not found","err");return;}
-  var instName=(S.settings&&S.settings.inst_name)||"Coaching Institute";
-  var color=module==="library"?"#2e7d32":"#1565c0";
-  var html='<html><head><style>body{font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;font-size:13px}.hdr{text-align:center;border-bottom:3px solid '+color+';padding-bottom:12px;margin-bottom:14px}.inst{font-size:19px;font-weight:800;color:'+color+'}.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9}.lbl{color:#64748b}.val{font-weight:600}.amt-box{background:#f0f4ff;border-radius:8px;padding:14px;text-align:center;margin:14px 0}.amt{font-size:26px;font-weight:800;color:'+color+'}.stamp{color:#2e7d32;font-size:18px;font-weight:800;border:3px solid #2e7d32;border-radius:7px;display:inline-block;padding:3px 14px}.footer{text-align:center;font-size:10px;color:#94a3b8;margin-top:16px;border-top:1px solid #f1f5f9;padding-top:10px}</style></head><body>'
-    +'<div class="hdr"><div class="inst">'+instName+'</div><div style="color:#64748b;font-size:12px">'+(module==="library"?"Library":"Hostel")+' Fee Receipt | '+today()+'</div></div>'
+  var fee=res.data;if(!fee)return;
+  var list=module==="library"?S.libMembers:module==="mess"?S.messMembers:S.students;
+  var item=list.find(function(x){return String(x.id)===String(studentId);});if(!item)return;
+  var instName=(S.settings&&S.settings.inst_name)||"Institute";
+  var color=module==="library"?"#2e7d32":module==="mess"?"#e65100":"#1565c0";
+  var label=module==="library"?"Library":module==="mess"?"Mess":"Hostel";
+  var html='<html><head><style>body{font-family:Arial;max-width:560px;margin:0 auto;padding:24px;font-size:13px}.hdr{text-align:center;border-bottom:3px solid '+color+';padding-bottom:12px;margin-bottom:14px}.inst{font-size:19px;font-weight:800;color:'+color+'}.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9}.lbl{color:#64748b}.val{font-weight:600}.amt-box{background:#f0f4ff;border-radius:8px;padding:14px;text-align:center;margin:14px 0}.amt{font-size:26px;font-weight:800;color:'+color+'}.stamp{color:#2e7d32;font-size:18px;font-weight:800;border:3px solid #2e7d32;border-radius:7px;display:inline-block;padding:3px 14px}.footer{text-align:center;font-size:10px;color:#94a3b8;margin-top:16px;border-top:1px solid #f1f5f9;padding-top:10px}</style></head><body>'
+    +'<div class="hdr"><div class="inst">'+instName+'</div><div style="color:#64748b;font-size:12px">'+label+' Fee Receipt | '+today()+'</div></div>'
     +'<div class="row"><span class="lbl">Name</span><span class="val">'+item.name+'</span></div>'
-    +(item.room?'<div class="row"><span class="lbl">Room</span><span class="val">'+item.room+'</span></div>':'')
-    +(item.seat_number?'<div class="row"><span class="lbl">Seat</span><span class="val">'+item.seat_number+'</span></div>':'')
     +'<div class="row"><span class="lbl">Month</span><span class="val">'+MONTHS[parseInt(fee.month,10)-1]+' '+fee.year+'</span></div>'
-    +'<div class="row"><span class="lbl">Net Payable</span><span class="val">₹'+Number(fee.net_amount||0).toLocaleString("en-IN")+'</span></div>'
-    +'<div class="amt-box"><div style="font-size:11px;color:#64748b;margin-bottom:4px">AMOUNT RECEIVED</div><div class="amt">₹'+Number(fee.paid_amount||0).toLocaleString("en-IN")+'</div>'
-    +(Number(fee.balance)>0?'<div style="font-size:12px;color:#f57f17;margin-top:4px">Balance: ₹'+Number(fee.balance).toLocaleString("en-IN")+'</div>':'')+'</div>'
+    +'<div class="amt-box"><div style="font-size:11px;color:#64748b">AMOUNT RECEIVED</div><div class="amt">₹'+Number(fee.paid_amount||0).toLocaleString("en-IN")+'</div></div>'
     +(fee.status==="paid"?'<div style="text-align:center"><span class="stamp">PAID IN FULL</span></div>':'')
-    +'<div class="footer">'+instName+' | Computer-generated receipt</div></body></html>';
+    +'<div class="footer">'+instName+'</div></body></html>';
   var win=window.open("","_blank","width=640,height=700");if(win){win.document.write(html);win.document.close();}
 }
 
-// ── ID CARD ───────────────────────────────────────────────────
+// ═══ ID CARD ═══
 function showIdCard(studentId,module){
   var list=module==="library"?S.libMembers:S.students;
-  var item=list.find(function(x){return String(x.id)===String(studentId);});if(!item){toast("Not found","err");return;}
-  var instName=(S.settings&&S.settings.inst_name)||"Coaching Institute";
+  var item=list.find(function(x){return String(x.id)===String(studentId);});if(!item)return;
+  var instName=(S.settings&&S.settings.inst_name)||"Institute";
   var color=module==="library"?"#2e7d32":"#1565c0";
   var initials=(item.name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
-  var html='<div style="width:320px;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.18);background:#fff;margin:auto">'
+  document.getElementById("id-card-frame").innerHTML='<div style="width:320px;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.18);background:#fff;margin:auto">'
     +'<div style="background:'+color+';padding:16px;text-align:center;color:#fff;font-weight:800"><div>'+instName+'</div><div style="font-size:10px;letter-spacing:3px;opacity:.8">'+(module==="library"?"LIBRARY MEMBER":"HOSTEL STUDENT")+'</div></div>'
     +'<div style="padding:16px;display:flex;gap:14px;align-items:center">'
-    +'<div style="width:64px;height:64px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:800;flex-shrink:0">'+initials+'</div>'
-    +'<div><div style="font-size:16px;font-weight:800;color:#1a2332">'+item.name+'</div>'
+    +'<div style="width:64px;height:64px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:800">'+initials+'</div>'
+    +'<div><div style="font-size:16px;font-weight:800">'+item.name+'</div>'
+    +(item.hostel_name?'<div style="font-size:11px;color:#64748b">'+item.hostel_name+'</div>':'')
     +(item.room?'<div style="font-size:11px;color:#64748b">Room: '+item.room+'</div>':'')
-    +(item.seat_number?'<div style="font-size:11px;color:#64748b">Seat: '+item.seat_number+'</div>':'')
-    +'<div style="font-size:11px;color:#64748b">'+(item.course||"—")+'</div>'
     +'<div style="font-size:11px;color:#64748b">'+(item.phone||"—")+'</div></div></div>'
-    +'<div style="background:#f8fafc;padding:10px 16px;display:flex;justify-content:space-between;font-size:11px;border-top:1px solid #e2e8f0"><span style="background:'+color+';color:#fff;border-radius:4px;padding:2px 8px;font-weight:700">ID: '+String(studentId).slice(-8)+'</span><span style="color:#94a3b8">'+today()+'</span></div>'
-    +'</div>';
-  document.getElementById("id-card-frame").innerHTML=html;
+    +'<div style="background:#f8fafc;padding:10px 16px;font-size:11px;border-top:1px solid #e2e8f0"><span style="background:'+color+';color:#fff;border-radius:4px;padding:2px 8px;font-weight:700">ID: '+String(studentId).slice(-8)+'</span></div></div>';
   openM("m-idcard");
 }
 function printIdCard(){window.print();}
 
-// ── REMINDERS ─────────────────────────────────────────────────
-function openReminderConfirm(module){
-  setV("remind-module",module);
-  var ms=module==="library"?S.monthSummary.library:S.monthSummary.hostel;
-  var pending=ms.filter(function(x){return x.status!=="paid";});
-  document.getElementById("remind-count").textContent=pending.length;
-  document.getElementById("remind-recipients").innerHTML=pending.slice(0,5).map(function(x){
-    return'<div class="recipient-row"><span>'+x.name+'</span><span style="color:#64748b">balance</span><span style="color:#c62828">₹'+Number(x.balance||0).toLocaleString("en-IN")+'</span></div>';
-  }).join("")+(pending.length>5?'<div style="color:#94a3b8;font-size:11px;padding:4px 0">…and '+(pending.length-5)+' more</div>':"");
-  openM("m-confirm-reminder");
-}
-function confirmSendReminders(){
-  toast("WhatsApp links must be sent individually. Use 📱 button per student.");
-  closeM("m-confirm-reminder");
-}
+// ═══ REMINDERS ═══
+function confirmSendReminders(){toast("Use 📱 WhatsApp button per student.");closeM("m-confirm-reminder");}
 
-// ── BROADCAST ─────────────────────────────────────────────────
+// ═══ BROADCAST ═══
 function renderBroadcast(){
   setContent(
-    '<div style="max-width:600px">'
-    +'<div class="card"><div class="card-title">📣 Broadcast Notice</div>'
+    '<div style="max-width:600px"><div class="card"><div class="card-title">📣 Broadcast Notice</div>'
     +'<div class="form-grid">'
-    +'<div class="fg full"><label class="flbl">Subject *</label><input class="finp" id="bc-subject" placeholder="e.g. Fee reminder for March"/></div>'
-    +'<div class="fg full"><label class="flbl">Message *</label><textarea class="bc-area" id="bc-message" placeholder="Type your message here…"></textarea></div>'
-    +'<div class="fg"><label class="flbl">Send To</label><select class="finp" id="bc-target"><option value="all">All (Hostel + Library)</option><option value="hostel">Hostel Students Only</option><option value="library">Library Members Only</option></select></div>'
-    +'</div>'
-    +'<div style="display:flex;gap:8px;margin-top:12px">'
-    +'<button class="btn-primary" onclick="sendBroadcast()">📣 Send Broadcast</button>'
-    +'</div></div>'
-    +'</div>'
+    +'<div class="fg full"><label class="flbl">Subject *</label><input class="finp" id="bc-subject"/></div>'
+    +'<div class="fg full"><label class="flbl">Message *</label><textarea class="bc-area" id="bc-message"></textarea></div>'
+    +'<div class="fg"><label class="flbl">Send To</label><select class="finp" id="bc-target"><option value="all">All</option><option value="hostel">Hostel</option><option value="library">Library</option><option value="mess">Mess</option></select></div>'
+    +'</div><button class="btn-primary" style="margin-top:12px" onclick="sendBroadcast()">📣 Send</button></div></div>'
   );
 }
-
 async function sendBroadcast(){
-  var subject=v("bc-subject"),message=document.getElementById("bc-message").value.trim(),target=v("bc-target");
-  if(!subject||!message){toast("Fill subject and message","err");return;}
-  toast("Note: Email sending requires a server. This logs the broadcast. For emails, set up an email service.");
+  var subject=v("bc-subject"),message=document.getElementById("bc-message").value.trim();
+  if(!subject||!message){toast("Fill all fields","err");return;}
   await sb.from("broadcast_log").insert({sent_at:today(),subject:subject,recipients:0,message:message.slice(0,500)});
   toast("Broadcast logged ✓","ok");
 }
 
-// ── IMPORT ────────────────────────────────────────────────────
+// ═══ IMPORT ═══
 var _importState={step:1,module:"hostel",rows:[],headers:[],mapping:{}};
-var IMPORT_FIELDS_HOSTEL=["name","room","course","phone","email","dob","joining_date","monthly_fee_amount","fee_day","discount","notes"];
+var IMPORT_FIELDS_HOSTEL=["name","hostel_name","room","course","phone","email","dob","joining_date","monthly_fee_amount","fee_day","discount","notes"];
 var IMPORT_FIELDS_LIB=["name","seat_number","course","phone","email","dob","joining_date","monthly_fee_amount","fee_day","discount","notes"];
-
-function renderImport(){
-  _importState.step=1;
-  setContent(buildImportHtml());
-}
+function renderImport(){_importState.step=1;setContent(buildImportHtml());}
 function buildImportHtml(){
   if(_importState.step===1){
-    return'<div class="import-step"><div class="import-hdr">📥 Import Students / Members</div>'
-      +'<p style="font-size:13px;color:#64748b;margin-bottom:16px">Upload a CSV or Excel file to bulk-import records. Download a sample template to see the correct format.</p>'
-      +'<div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">'
-      +'<select class="finp" id="import-module" style="width:200px"><option value="hostel">Hostel Students</option><option value="library">Library Members</option></select>'
-      +'</div>'
-      +'<div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">'
-      +'<button class="btn-sm btn-blue" onclick="downloadTemplate(\'hostel\')">⬇️ Hostel Template</button>'
-      +'<button class="btn-sm btn-green" onclick="downloadTemplate(\'library\')">⬇️ Library Template</button>'
-      +'</div>'
-      +'<div class="fg"><label class="flbl">Upload CSV File</label><input type="file" id="import-file" accept=".csv" class="finp" onchange="handleImportFile(event)"/></div>'
-      +'</div>';
+    return'<div class="import-step"><div class="import-hdr">📥 Import Data</div>'
+      +'<p style="font-size:13px;color:#64748b;margin-bottom:16px">Upload a CSV to bulk-import records.</p>'
+      +'<select class="finp" id="import-module" style="width:200px;margin-bottom:14px"><option value="hostel">Hostel Students</option><option value="library">Library Members</option></select>'
+      +'<div class="fg"><label class="flbl">CSV File</label><input type="file" id="import-file" accept=".csv" class="finp" onchange="handleImportFile(event)"/></div></div>';
   }
   if(_importState.step===2){
     var fields=_importState.module==="library"?IMPORT_FIELDS_LIB:IMPORT_FIELDS_HOSTEL;
-    return'<div class="import-step"><div class="import-hdr">Map Columns — Step 2 of 3</div>'
-      +'<p style="font-size:13px;color:#64748b;margin-bottom:12px">'+_importState.rows.length+' rows found. Match your CSV columns to the correct fields.</p>'
-      +'<table class="import-table"><tr><th>Your CSV Column</th><th>Maps To</th><th>Sample Value</th></tr>'
+    return'<div class="import-step"><div class="import-hdr">Map Columns</div>'
+      +'<table class="import-table"><tr><th>CSV Column</th><th>Maps To</th><th>Sample</th></tr>'
       +_importState.headers.map(function(h){
-        var sample=_importState.rows[0]?(_importState.rows[0][h]||""):"";
-        return'<tr><td><strong>'+h+'</strong></td><td><select class="map-sel" data-col="'+h+'">'
-          +'<option value="">— Skip —</option>'
-          +fields.map(function(f){return'<option value="'+f+'"'+((_importState.mapping[h]===f)?' selected':'')+'>'+f+'</option>';}).join("")
-          +'</select></td><td style="color:#94a3b8">'+sample+'</td></tr>';
-      }).join("")
-      +'</table>'
-      +'<div style="display:flex;gap:8px;margin-top:14px">'
-      +'<button class="btn-sm btn-gray" onclick="_importState.step=1;setContent(buildImportHtml())">← Back</button>'
-      +'<button class="btn-primary" onclick="goImportPreview()">Preview →</button>'
-      +'</div></div>';
+        var sample=_importState.rows[0]?(String(_importState.rows[0][h]||"")).slice(0,30):"";
+        return'<tr><td><strong>'+h+'</strong></td><td><select class="map-sel" data-col="'+h+'"><option value="">Skip</option>'+fields.map(function(f){return'<option value="'+f+'"'+((_importState.mapping[h]===f)?' selected':'')+'>'+f+'</option>';}).join("")+'</select></td><td style="color:#94a3b8">'+sample+'</td></tr>';
+      }).join("")+'</table>'
+      +'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn-sm btn-gray" onclick="_importState.step=1;setContent(buildImportHtml())">← Back</button><button class="btn-primary" onclick="goImportPreview()">Preview →</button></div></div>';
   }
   if(_importState.step===3){
-    var preview=_importState.rows.slice(0,5).map(function(row){
-      var d={};Object.keys(_importState.mapping).forEach(function(k){if(_importState.mapping[k])d[_importState.mapping[k]]=row[k];});
-      return d;
-    });
-    return'<div class="import-step"><div class="import-hdr">Preview — Step 3 of 3</div>'
-      +'<p style="font-size:13px;color:#64748b;margin-bottom:12px">Ready to import <strong>'+_importState.rows.length+'</strong> '+_importState.module+' records. First 5 shown below:</p>'
-      +'<table class="import-table"><tr><th>Name</th><th>Phone</th><th>Fee Amount</th><th>Joining Date</th></tr>'
-      +preview.map(function(d){return'<tr><td>'+fmt(d.name)+'</td><td>'+fmt(d.phone)+'</td><td>'+fmtM(d.monthly_fee_amount||0)+'</td><td>'+fmt(d.joining_date)+'</td></tr>';}).join("")
-      +'</table>'
-      +'<div style="display:flex;gap:8px;margin-top:14px">'
-      +'<button class="btn-sm btn-gray" onclick="_importState.step=2;setContent(buildImportHtml())">← Back</button>'
-      +'<button class="btn-primary" onclick="doImport()">✓ Import '+_importState.rows.length+' Records</button>'
-      +'</div></div>';
+    return'<div class="import-step"><div class="import-hdr">Preview ('+_importState.rows.length+' rows)</div>'
+      +'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn-sm btn-gray" onclick="_importState.step=2;setContent(buildImportHtml())">← Back</button><button class="btn-primary" onclick="doImport()">✓ Import '+_importState.rows.length+'</button></div></div>';
   }
 }
-
-function downloadTemplate(module){
-  var fields=module==="library"?IMPORT_FIELDS_LIB:IMPORT_FIELDS_HOSTEL;
-  var csv=fields.join(",")+"\n"+(module==="hostel"?"Rahul Sharma,A-101,B.Tech,9876543210,rahul@email.com,2000-01-15,2024-01-01,5000,1,0,Good student":"Priya Singh,S-12,B.Sc,9876543211,priya@email.com,2001-03-20,2024-01-01,3000,5,0,");
-  var blob=new Blob([csv],{type:"text/csv"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=module+"_template.csv";a.click();
-}
-
 function handleImportFile(e){
   _importState.module=(document.getElementById("import-module")||{value:"hostel"}).value;
   var file=e.target.files[0];if(!file)return;
   var reader=new FileReader();
   reader.onload=function(ev){
     var lines=ev.target.result.split("\n").map(function(l){return l.trim();}).filter(Boolean);
-    if(lines.length<2){toast("CSV needs at least 2 rows (header + data)","err");return;}
+    if(lines.length<2)return;
     var headers=lines[0].split(",").map(function(h){return h.trim().replace(/^"|"$/g,"");});
-    var rows=lines.slice(1).map(function(line){
-      var vals=line.split(",").map(function(v){return v.trim().replace(/^"|"$/g,"");});
-      var obj={};headers.forEach(function(h,i){obj[h]=vals[i]||"";});return obj;
-    });
+    var rows=lines.slice(1).map(function(line){var vals=line.split(",").map(function(v){return v.trim().replace(/^"|"$/g,"");});var obj={};headers.forEach(function(h,i){obj[h]=vals[i]||"";});return obj;});
     _importState.headers=headers;_importState.rows=rows;
-    var auto={};headers.forEach(function(h){var l=h.toLowerCase().replace(/\s+/g,"_");if(IMPORT_FIELDS_HOSTEL.indexOf(l)!==-1)auto[h]=l;});
+    var auto={};headers.forEach(function(h){var l=h.toLowerCase().replace(/\s+/g,"_");var fields=_importState.module==="library"?IMPORT_FIELDS_LIB:IMPORT_FIELDS_HOSTEL;if(fields.indexOf(l)!==-1)auto[h]=l;});
     _importState.mapping=auto;_importState.step=2;setContent(buildImportHtml());
-    toast("Found "+rows.length+" rows. Map your columns below.");
-  };
-  reader.readAsText(file);
+  };reader.readAsText(file);
 }
-
 function goImportPreview(){
-  var mapping={};
-  document.querySelectorAll(".map-sel").forEach(function(sel){if(sel.value)mapping[sel.dataset.col]=sel.value;});
+  var mapping={};document.querySelectorAll(".map-sel").forEach(function(sel){if(sel.value)mapping[sel.dataset.col]=sel.value;});
   _importState.mapping=mapping;
-  if(!Object.values(mapping).includes("name")){toast("Must map the 'Name' column","err");return;}
+  if(!Object.values(mapping).includes("name")){toast("Must map Name","err");return;}
   _importState.step=3;setContent(buildImportHtml());
 }
-
 async function doImport(){
-  toast("Importing…");
-  var module=_importState.module;
+  toast("Importing…");var module=_importState.module;
   var table=module==="library"?"library_members":"hostel_students";
   var feeTable=module==="library"?"library_fees":"monthly_fees";
   var idField=module==="library"?"member_id":"student_id";
   var nameField=module==="library"?"member_name":"student_name";
-  var imported=0,skipped=0,m=S.curMonth,y=S.curYear;
-
+  var imported=0,m=S.curMonth,y=S.curYear;
   for(var i=0;i<_importState.rows.length;i++){
     var row=_importState.rows[i];var d={};
     Object.keys(_importState.mapping).forEach(function(k){if(_importState.mapping[k]&&row[k])d[_importState.mapping[k]]=row[k];});
-    if(!d.name){skipped++;continue;}
+    if(!d.name)continue;
     var id=uid(module==="library"?"LM":"S");
     var rec={id:id,name:d.name,phone:d.phone||"",email:d.email||"",course:d.course||"",dob:d.dob||null,joining_date:d.joining_date||null,monthly_fee_amount:Number(d.monthly_fee_amount)||0,fee_day:parseInt(d.fee_day)||1,discount:Number(d.discount)||0,notes:d.notes||""};
-    if(module==="hostel")rec.room=d.room||"";
+    if(module==="hostel"){rec.room=d.room||"";rec.hostel_name=d.hostel_name||"";}
     else rec.seat_number=d.seat_number||"";
     try{
       await sb.from(table).insert(rec);
       var net=Math.max(0,rec.monthly_fee_amount-rec.discount);
-      var fee={id:uid(module==="library"?"LF":"HF"),month:m,year:y,due_date:computeDueDate(rec,m,y),total_amount:rec.monthly_fee_amount,discount:rec.discount,net_amount:net,paid_amount:0,balance:net,status:"pending"};
+      var fee={id:uid("F"),month:m,year:y,due_date:computeDueDate(rec,m,y),total_amount:rec.monthly_fee_amount,discount:rec.discount,net_amount:net,paid_amount:0,balance:net,status:"pending"};
       fee[idField]=id;fee[nameField]=d.name;
-      await sb.from(feeTable).insert(fee);
-      imported++;
-    }catch(e){skipped++;}
+      await sb.from(feeTable).insert(fee);imported++;
+    }catch(e){}
   }
-  toast("Imported "+imported+", skipped "+skipped,"ok");loadData();_importState.step=1;
+  toast("Imported "+imported,"ok");loadData();_importState.step=1;
 }
 
-// ── SETTINGS ─────────────────────────────────────────────────
+// ═══ SETTINGS ═══
 function renderSettings(){
+  if(!isAdmin()){setContent('<div class="empty">Admin access required</div>');return;}
   var cfg=S.settings||{};
+  var hostelNames=getHostelNames();
   setContent(
-    '<div style="max-width:600px">'
-    +'<div class="settings-card"><div class="settings-title">🏫 Institute Details</div>'
-    +'<div class="form-grid">'
-    +'<div class="fg"><label class="flbl">Institute Name</label><input class="finp" id="cfg-name" value="'+(cfg.inst_name||"")+'" placeholder="Coaching Institute"/></div>'
-    +'<div class="fg"><label class="flbl">Admin Email</label><input class="finp" id="cfg-email" type="email" value="'+(cfg.admin_email||"")+'"/></div>'
+    '<div style="max-width:700px">'
+    +'<div class="settings-card"><div class="settings-title">🏫 Institute</div><div class="form-grid">'
+    +'<div class="fg"><label class="flbl">Institute Name</label><input class="finp" id="cfg-name" value="'+(cfg.inst_name||"")+'"/></div>'
+    +'<div class="fg"><label class="flbl">Admin Email</label><input class="finp" id="cfg-email" value="'+(cfg.admin_email||"")+'"/></div>'
     +'</div><button class="btn-primary" style="margin-top:10px" onclick="saveSettingsForm()">Save</button></div>'
+
+    +'<div class="settings-card"><div class="settings-title">🏢 Manage Hostels</div>'
+    +'<div class="settings-desc">Add hostel building names. These appear in student forms and the occupancy dashboard.</div>'
+    +'<div id="hostel-list" style="margin-bottom:10px">'+hostelNames.map(function(h,i){return'<div class="bulk-row"><span style="flex:1;font-weight:600">'+h+'</span><button class="btn-sm btn-red" onclick="removeHostel('+i+')">✕</button></div>';}).join("")+'</div>'
+    +'<div style="display:flex;gap:8px"><input class="finp" id="new-hostel" placeholder="Hostel name" style="flex:1"/><button class="btn-sm btn-blue" onclick="addHostel()">+ Add</button></div></div>'
+
     +'<div class="settings-card"><div class="settings-title">📲 WhatsApp Template</div>'
     +'<div class="settings-desc">Variables: {name} {net} {month} {year} {dueDate} {balance}</div>'
-    +'<textarea class="bc-area" id="cfg-wa" style="height:65px">'+(cfg.wa_template||"Dear {name}, your fee Rs.{net} for {month}/{year} is due on {dueDate}. Balance: Rs.{balance}.")+'</textarea>'
+    +'<textarea class="bc-area" id="cfg-wa" style="height:65px">'+(cfg.wa_template||"")+'</textarea>'
     +'<button class="btn-primary" style="margin-top:7px" onclick="saveSettingsForm()">Save</button></div>'
+
+    +'<div class="settings-card"><div class="settings-title">👥 User Management</div>'
+    +'<div class="settings-desc">Manage login accounts and roles (Admin / Manager / Team Member)</div>'
+    +'<button class="btn-primary" onclick="openUsersModal()">Manage Users</button></div>'
+
     +'<div class="settings-card"><div class="settings-title">🔄 Data</div>'
     +'<button class="btn-primary" onclick="loadData()">↻ Refresh All Data</button></div>'
     +'</div>'
@@ -1440,32 +1861,76 @@ async function saveSettingsForm(){
   var upd={inst_name:v("cfg-name"),admin_email:v("cfg-email"),wa_template:waEl?waEl.value.trim():""};
   await sb.from("app_settings").update(upd).eq("id",1);
   S.settings=Object.assign(S.settings||{},upd);
+  document.getElementById("brand-label").textContent=upd.inst_name;
   toast("Settings saved ✓");
+}
+async function addHostel(){
+  var name=v("new-hostel");if(!name)return;
+  var names=getHostelNames();names.push(name);
+  await sb.from("app_settings").update({hostel_names:JSON.stringify(names)}).eq("id",1);
+  S.settings.hostel_names=JSON.stringify(names);
+  renderSettings();toast("Hostel added ✓");
+}
+async function removeHostel(idx){
+  var names=getHostelNames();names.splice(idx,1);
+  await sb.from("app_settings").update({hostel_names:JSON.stringify(names)}).eq("id",1);
+  S.settings.hostel_names=JSON.stringify(names);
+  renderSettings();toast("Removed ✓");
+}
+
+// ═══ USER MANAGEMENT ═══
+async function openUsersModal(){
+  var res=await sb.from("app_users").select("*").order("created_at");
+  var users=res.data||[];
+  document.getElementById("users-list").innerHTML=users.map(function(u){
+    return'<div class="bulk-row"><div style="flex:1"><div style="font-weight:700;font-size:13px">'+u.display_name+' <span style="color:#94a3b8;font-weight:400">@'+u.username+'</span></div>'
+      +'<div style="font-size:11px;color:#64748b">Role: '+u.role+(u.is_active?"":" · DISABLED")+'</div></div>'
+      +(u.username!=="admin"?'<button class="btn-sm btn-red" onclick="deleteUser(\''+u.id+'\')">✕</button>':'')
+      +'</div>';
+  }).join("");
+  openM("m-users");
+}
+async function addUser(){
+  var user=v("nu-user"),pass=v("nu-pass"),name=v("nu-name"),role=v("nu-role");
+  if(!user||!pass){toast("Username and password required","err");return;}
+  await sb.from("app_users").insert({id:uid("U"),username:user,password_hash:pass,display_name:name||user,role:role});
+  toast("User added ✓");openUsersModal();
+}
+async function deleteUser(id){
+  if(!confirm("Delete this user?"))return;
+  await sb.from("app_users").delete().eq("id",id);
+  toast("Deleted");openUsersModal();
 }
 
 // ══════════════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════════════
 window.onload = function(){
-  // Check if credentials are set
   if(SUPABASE_URL==="YOUR_SUPABASE_URL"||SUPABASE_KEY==="YOUR_SUPABASE_ANON_KEY"){
+    document.getElementById("login-screen").style.display="none";
+    document.getElementById("app").style.display="flex";
     setContent(
       '<div class="loading-wrap" style="padding:30px;max-width:500px;margin:auto;text-align:left">'
       +'<div style="font-size:32px;margin-bottom:12px">🔧</div>'
       +'<div style="font-size:18px;font-weight:800;margin-bottom:8px">Setup Required</div>'
-      +'<p style="color:#64748b;font-size:14px;margin-bottom:16px">Open <strong>index.html</strong> in a text editor and replace these two values at the top of the script:</p>'
+      +'<p style="color:#64748b;font-size:14px;margin-bottom:16px">Open <strong>index.html</strong> and replace the two config values:</p>'
       +'<div style="background:#1a2332;color:#a5f3fc;padding:14px;border-radius:8px;font-family:monospace;font-size:13px;margin-bottom:16px">'
-      +'var SUPABASE_URL = "<strong style=\'color:#fde68a\'>your-project-url</strong>";<br>'
-      +'var SUPABASE_KEY = "<strong style=\'color:#fde68a\'>your-anon-key</strong>";'
-      +'</div>'
-      +'<p style="color:#64748b;font-size:13px">Find these in your <a href="https://supabase.com/dashboard" target="_blank" style="color:#1565c0">Supabase Dashboard</a> → Project Settings → API</p>'
-      +'</div>'
+      +'var SUPABASE_URL = "<strong style=\'color:#fde68a\'>your-url</strong>";<br>'
+      +'var SUPABASE_KEY = "<strong style=\'color:#fde68a\'>your-key</strong>";'
+      +'</div></div>'
     );
     return;
   }
 
-  // Init Supabase
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Check for saved session
+  var saved=sessionStorage.getItem("cur_user");
+  if(saved){try{CUR_USER=JSON.parse(saved);showApp();return;}catch(e){}}
+
+  // Show login
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("app").style.display="none";
 
   // Close modals on overlay click
   document.querySelectorAll(".overlay").forEach(function(ov){
@@ -1474,8 +1939,8 @@ window.onload = function(){
   document.addEventListener("click",function(e){
     try{if(!e.target.closest(".notif-wrap"))document.getElementById("notif-panel").classList.remove("open");}catch(ex){}
   });
-
-  loadData();
+  // Allow Enter on login
+  document.getElementById("login-pass").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin();});
 };
 </script>
 </body>
